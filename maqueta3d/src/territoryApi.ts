@@ -105,22 +105,33 @@ export function buildTerritory(rows: ApiRows, manifest: Manifest): Territory {
 }
 
 /**
- * Pide todas las filas de una vista de `api`, de 1.000 en 1.000 (límite por respuesta de Supabase).
+ * Pide todas las filas de una vista de `api` (Supabase devuelve como máximo 1.000 por respuesta).
+ * La primera página trae el total (count=exact); las demás se piden EN PARALELO.
  * El orden DEBE ser único: si no, las páginas pueden duplicar o saltarse filas con el mismo valor.
  */
-type Pagina = PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>;
+const PAGINA = 1000;
+type Pagina = PromiseLike<{ data: unknown[] | null; error: { message: string } | null; count?: number | null }>;
 type Ordenable = { order: (columna: string) => Ordenable; range: (desde: number, hasta: number) => Pagina };
-type Consultable = { from: (vista: string) => { select: (columnas: string) => Ordenable } };
+type Consultable = { from: (vista: string) => { select: (columnas: string, opciones?: { count?: "exact" }) => Ordenable } };
 async function todas<T>(cliente: Consultable, vista: string, columnas: string, orden: string): Promise<T[]> {
-  const filas: T[] = [];
-  for (let desde = 0; ; desde += 1000) {
-    let consulta = cliente.from(vista).select(columnas);
+  const pedir = (desde: number, contar = false) => {
+    let consulta = cliente.from(vista).select(columnas, contar ? { count: "exact" } : undefined);
     for (const columna of orden.split(",")) consulta = consulta.order(columna);
-    const { data, error } = await consulta.range(desde, desde + 999);
-    if (error) throw new Error(`${vista}: ${error.message}`);
-    filas.push(...((data ?? []) as T[]));
-    if (!data || data.length < 1000) return filas;
+    return consulta.range(desde, desde + PAGINA - 1);
+  };
+  const primera = await pedir(0, true);
+  if (primera.error) throw new Error(`${vista}: ${primera.error.message}`);
+  const total = primera.count ?? primera.data?.length ?? 0;
+  const resto = await Promise.all(
+    Array.from({ length: Math.max(0, Math.ceil(total / PAGINA) - 1) }, (_, i) => pedir((i + 1) * PAGINA)),
+  );
+  const filas = [...(primera.data ?? [])];
+  for (const r of resto) {
+    if (r.error) throw new Error(`${vista}: ${r.error.message}`);
+    filas.push(...(r.data ?? []));
   }
+  if (filas.length !== total) throw new Error(`${vista}: llegaron ${filas.length} filas de ${total}`);
+  return filas as T[];
 }
 
 export async function loadTerritoryFromApi(cliente: Consultable, manifest: Manifest): Promise<Territory> {

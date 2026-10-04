@@ -33,6 +33,7 @@ El borrador de `db/supabase/migrations/` sigue este diccionario con estos ajuste
 | `api.mediciones_verificadas` | Vista nueva (migración 14) | Lectura ligera de lo verificado para los 2.991 espacios |
 | `api.mediciones_pendientes` | Vista nueva (migración 15), con `propia` y `puedo_validar` | Validación desde la app sin exponer quién reportó |
 | `api.espacio_ficha` | Excluye las mediciones simuladas (migración 15) | Un parque real no puede mostrar datos inventados por una cuenta demo |
+| `geo.exposicion_cache` | Vista materializada de los cruces (migración 16); `geo.refrescar_exposicion()` solo la ejecuta el dueño | La API dejó de recalcular los cruces de toda la ciudad en cada página |
 | Auditoría | `ops.lecturas_iot` no se audita | Simulada, de alto volumen y con 30 días de retención |
 
 ## `ref`: catálogos

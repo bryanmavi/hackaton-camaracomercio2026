@@ -163,6 +163,7 @@ Las pruebas de navegador (`npx playwright test`) corren en modo estático, sin `
 | `SELF_SIGNED_CERT_IN_CHAIN` | El sistema no conoce la CA de Supabase | Agregar `&sslrootcert=…/db/certs/supabase-prod-ca-2021.crt`; **nunca** desactivar la verificación |
 | Advertencia de `pg`: `sslmode require … treated as verify-full` | Cambio anunciado de la librería | Usar `sslmode=verify-full` explícito |
 | `PGRST106 Invalid schema: api` | El esquema `api` no estaba expuesto | *Project Settings → Data API → Exposed schemas* = `api` |
+| Carga lenta desde la base (≈ 8,5 s) | Páginas en serie y cruces espaciales recalculados en cada página | Cruces precalculados (migración 16) y páginas en paralelo: 1,3–1,8 s |
 | Paridad con Supabase: cientos de espacios distintos | Paginación con un orden repetido (`order=zona_id`) | Ordenar por una clave única (`zona_id,espacio_id`) |
 | `password authentication failed` | Contraseña incorrecta o ya cambiada | Restablecerla en *Project Settings → Database* y repetir `supabase link` |
 | `supabase db push` pide la contraseña | El enlace guarda el proyecto, no la contraseña | Escribirla en el prompt de la CLI, o `export SUPABASE_DB_PASSWORD` solo en esa sesión |

@@ -199,6 +199,9 @@ export async function cargarDatosReales(db, { registro = console.log } = {}) {
         nombre = excluded.nombre, comuna_codigo = excluded.comuna_codigo, barrio_codigo = excluded.barrio_codigo,
         direccion_publica = excluded.direccion_publica`, [fc(capas.jac)]);
 
+    // Cruces precalculados (migración 16): se refrescan en la MISMA transacción, así nunca quedan desfasados.
+    await db.query('select geo.refrescar_exposicion()');
+
     // Conteos contra el manifiesto: si no cuadran, se deshace todo.
     const { rows: [c] } = await db.query(`
       select (select count(*) from geo.comunas)::int as communes,

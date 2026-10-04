@@ -149,7 +149,7 @@ unset PGPASSWORD
 - **Mediciones (migración 15):** en Operación se declara una medición del espacio seleccionado; el formulario cambia según el tipo de dato, y la evaluación estructural es solo sí/no con fecha, sin concepto. La lista de pendientes trae los botones Verificar y Rechazar para quien puede validar ese atributo. Probado en Supabase real: la JAC A declaró 3 baños en `epou-9535` y no pudo validarlos; UAESP los verificó con evidencia.
 - **Lo simulado no se publica como real:** la ficha pública (`api.espacio_ficha`) y el mapa excluyen las mediciones de las cuentas demo. En `epou-9535` la ficha sigue en `banos: null`, mientras `api.mediciones_verificadas` muestra el dato marcado `es_simulado: true`. En `dev` queda esa única medición de demostración.
 - **TOTP en el plan gratuito:** comprobado en el proyecto con una inscripción de prueba que se borró al instante. El MFA por SMS sí exige plan Pro, pero no se usa.
-- **Pendiente:** la lectura completa tarda unos 8,5 s desde Colombia. Se puede mejorar con vistas más livianas o caché. Falta probar en el navegador el registro de una decisión con MFA real.
+- **Tiempo de carga:** bajó de unos 8,5 s a **1,3–1,8 s**, medido en el navegador contra Supabase real. Se logró con los cruces precalculados en una vista materializada que la carga refresca en la misma transacción (migración 16), y con las páginas pedidas en paralelo. La paridad con los JSON se mantiene. Falta probar en el navegador el registro de una decisión con MFA real.
 
 ## 11. Decisiones tomadas en esta sesión
 

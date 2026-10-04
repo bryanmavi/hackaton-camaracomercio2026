@@ -53,10 +53,19 @@ Todas verifican permiso, alcance y, cuando aplica, MFA. Errores: `42501` sin per
 ## Cómo la consume la app (`maqueta3d`)
 
 - `src/territoryApi.ts` arma, desde `api`, **el mismo** objeto `Territory` que antes salía de los JSON estáticos. Está probado campo por campo: `npm run test:paridad` en `db/` (PGlite) y `scripts/paridad-supabase.mjs` en `maqueta3d/` (Supabase real).
-- **Paginación:** Supabase devuelve como máximo 1.000 filas por respuesta. Se pagina con un orden **único** (`orden_fuente`; `zona_id,espacio_id`; `espacio_id,atributo`). Con un orden repetido, las páginas duplican o saltan filas: ese error ya apareció y quedó corregido.
+- **Paginación:** Supabase devuelve como máximo 1.000 filas por respuesta. La primera página trae el total (`count=exact`) y las demás se piden **en paralelo**. Se pagina con un orden **único** (`orden_fuente`; `zona_id,espacio_id`; `espacio_id,atributo`). Con un orden repetido, las páginas duplican o saltan filas: ese error ya apareció y quedó corregido.
 - **Orden:** `espacios`, `comunas` y `barrios` traen `orden_fuente`, la posición en el archivo de la IDESC, para que listas y mapa salgan en el mismo orden de siempre.
 - **Precisión:** la API serializa los decimales con 15 cifras. Las coordenadas del punto representativo difieren de los JSON en menos de 10⁻¹³ grados.
 - **Respaldo:** sin variables de entorno, o si la base no responde, la app usa los JSON y lo dice en el encabezado.
+
+## Rendimiento medido en Supabase real (4 de octubre)
+
+| Versión | Carga completa del territorio |
+|---|---|
+| Primera conexión (páginas en serie, cruces calculados en vivo) | ≈ 8,5 s |
+| Cruces precalculados (migración 16) y páginas en paralelo | **1,3 a 1,8 s** (Node y navegador) |
+
+Los cruces de `api.espacio_exposicion` salen de `geo.exposicion_cache`, una vista materializada. La carga de datos la refresca en la misma transacción, y una prueba comprueba que es idéntica al cálculo en vivo.
 
 ## Rendimiento medido (PGlite, con los datos reales)
 

@@ -49,6 +49,7 @@ Se carga tal como viene, sin inventar: 52 espacios sin comuna, 23 JAC cuyo códi
 | `…13` | `api.provisionar_perfil` y `api.asegurar_organizacion`, solo para `service_role` |
 | `…14` | `api.mediciones_verificadas` y `orden_fuente` (conexión de la app) |
 | `…15` | `api.mediciones_pendientes`; la ficha pública sin mediciones simuladas |
+| `…16` | Cruces precalculados (`geo.exposicion_cache`), refrescados por la carga |
 | `tests/paridad_app.mjs` | La app recibe de la base exactamente lo mismo que de los JSON |
 | `scripts/crear_usuarios_demo.mjs` | Las 13 cuentas de demostración (Hito 5) |
 | `scripts/cargar_datos_reales.mjs` | Carga del Hito 2 |

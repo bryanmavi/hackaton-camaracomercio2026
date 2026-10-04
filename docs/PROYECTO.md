@@ -3,7 +3,7 @@
 **Equipo:** William Ortiz, Herlin Echeverry, Pablo Arango, Bryan Martínez Villamarín
 **Reto:** RETO-01 Cali Activa: espacios públicos que se transforman para cuidar
 **Enfoque:** plan de contingencia multiamenaza (sismo, inundación y sequía/El Niño) para espacios públicos, con organismos y mecanismos para el antes, el durante y el después.
-**Última actualización:** 4 de octubre de 2026: mediciones en la app (declarar y verificar con cuatro ojos); lo simulado nunca se publica como real.
+**Última actualización:** 4 de octubre de 2026: la app carga desde la base en 1,3–1,8 s (antes ≈ 8,5 s).
 
 ---
 
@@ -571,6 +571,10 @@ Prueba de punta a punta en Supabase real: las 13 cuentas inician sesión con su 
 - **Hallazgo corregido:** una medición verificada por cuentas de demostración habría aparecido en la ficha pública de un parque real. Ahora la ficha y el mapa solo muestran mediciones reales, y lo simulado se ve marcado únicamente en Operación.
 - **TOTP:** se comprobó que funciona con el plan gratuito de Supabase. El SMS es de pago y no se usa.
 
+## 6.32 Tiempo de carga desde la base (4 de octubre)
+
+La carga del territorio desde Supabase bajó de **≈ 8,5 s a 1,3–1,8 s**, medido en el navegador. Las causas eran dos: las páginas de 1.000 filas se pedían en serie, y la API recalculaba el cruce espacial de toda la ciudad en cada página. Ahora los cruces están precalculados (migración 16; la carga de datos los refresca en la misma transacción y una prueba confirma que son idénticos al cálculo en vivo) y las páginas se piden en paralelo. Los datos siguen siendo los mismos de los JSON.
+
 ## 7. Pendientes
 - [ ] **Base de datos:** el responsable de la BD revisa el SQL del Hito 1 y responde las 10 decisiones de `db/docs/MODELO_DATOS.md` §9 (el borrador asume el valor propuesto en cada una).
 - [x] **Base de datos (H2):** script de carga de los datos reales con verificación de `sha256` (sección 6.27).
@@ -582,7 +586,8 @@ Prueba de punta a punta en Supabase real: las 13 cuentas inician sesión con su 
 - [ ] Supabase `dev`: activar el MFA TOTP y **cambiar la contraseña de la base** (quedó expuesta en el chat).
 - [x] App: lectura desde `api`, inicio de sesión, verificación en dos pasos y pestaña Operación (sección 6.30).
 - [x] App: declarar y verificar mediciones (sección 6.31).
-- [ ] App: probar con MFA real el registro de una decisión; bajar el tiempo de carga desde la base (≈8,5 s).
+- [x] Tiempo de carga desde la base: 1,3–1,8 s (sección 6.32).
+- [ ] App: probar con MFA real el registro de una decisión.
 - [ ] Cada integrante acepta la invitación, cierra su copia pública y sigue `db/docs/ACCESO_EQUIPO.pdf`. William los invita a la organización de Supabase con el rol Developer.
 - [x] Sustituir la descarga técnica principal por un informe de preparación legible, con todas las necesidades y opción de guardar como PDF.
 - [x] Integrar el fork de Herlin del 26 de septiembre (El kit y Word vigente) y publicar en GitHub Pages.

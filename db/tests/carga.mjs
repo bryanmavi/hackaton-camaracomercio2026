@@ -57,6 +57,14 @@ anotar('cruces de inundación iguales a los de la app', difInund.length === 0,
 anotar('cruces sísmicos iguales a los de la app', difSismo.length === 0,
   `(app: ${espacios.filter((e) => e.seismic.length).length}; distintos: ${difSismo.length} ${difSismo.slice(0, 5).join(' ')})`);
 
+// Los cruces precalculados (migración 16) son idénticos a los calculados en vivo
+const dif = await uno(db, `select (select count(*) from (select espacio_id, zona_id from geo.espacio_exposicion
+                                    except select espacio_id, zona_id from geo.exposicion_cache) a)::int
+                              + (select count(*) from (select espacio_id, zona_id from geo.exposicion_cache
+                                    except select espacio_id, zona_id from geo.espacio_exposicion) b)::int as n,
+                                  (select count(*) from geo.exposicion_cache)::int as filas`);
+anotar('cruces precalculados idénticos a los calculados en vivo', dif.n === 0 && dif.filas > 0, `(${dif.filas} cruces)`);
+
 // Lectura pública como anon, por la API
 await db.query('set role anon');
 const ficha = await uno(db, `select * from api.espacio_ficha where id = 'epou-8413'`);
