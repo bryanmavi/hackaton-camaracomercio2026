@@ -83,4 +83,5 @@ Los alcaldes y sus equipos cambian cada cuatro años; la gestión del riesgo no 
 3. Documento exacto, versión vigente y autor del "Protocolo de Alojamientos Temporales" que cita la bitácora.
 4. Competencia real de la UAESP en Cali para saneamiento en albergues.
 5. Mecanismo oficial (derecho de petición, Leyes 1712 y 1755, 🧠) para pedir esa información a la Secretaría: está en los pendientes de `docs/PROYECTO.md` §7.
-6. Nada de esto se marca como validado hasta tener una **ronda real** con la Secretaría o una junta (pendiente del IRL 3 en la bitácora); no se inventan conversaciones.
+6. **Animales:** ¿qué entidad de Cali atiende animales en un albergue (Salud Pública y zoonosis, autoridad ambiental u otra)? ¿Ajustó el municipio sus estrategias y planes de gestión del riesgo con criterios de protección animal, como ordenaba el art. 12 de la Ley 2474 de 2025 (plazo vencido el 9 de julio de 2026)? ¿La UNGRD ya expidió los protocolos sectoriales del art. 11, entre ellos el de alojamiento temporal de animales?
+7. Nada de esto se marca como validado hasta tener una **ronda real** con la Secretaría o una junta (pendiente del IRL 3 en la bitácora); no se inventan conversaciones.

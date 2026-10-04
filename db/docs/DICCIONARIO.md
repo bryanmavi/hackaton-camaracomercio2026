@@ -40,10 +40,13 @@ Una fila por conjunto de datos abiertos. Reproduce `maqueta3d/public/data/manife
 `codigo` PK (`flood`, `earthquake`, `drought`, `wildfire`, `building-fire`), `nombre_es`, `activa_en_motor` (false para `drought`: sin datos suficientes), `nota`.
 
 ### `ref.servicios` · Público
-`codigo` PK (`toilets`, `water`, `shelter`, `wildfire-perimeter`, `wildfire-access`, `wildfire-vegetation`, `wildfire-smoke`, `building-fire-access`, `building-fire-building`, `building-fire-inspection`...), `nombre_es`, `tipo` (`cuantitativo` o `tarea_evidencia`), `unidad` (`baños`, `L/día`, `m²`, nulo en tareas), `amenaza_codigo` FK (nulo en servicios generales), `parametro_clave` (a `ref.parametros_reglas`), `regla_texto`.
+`codigo` PK (`toilets`, `water`, `shelter`, `wildfire-perimeter`, `wildfire-access`, `wildfire-vegetation`, `wildfire-smoke`, `building-fire-access`, `building-fire-building`, `building-fire-inspection`, `animals`...), `nombre_es`, `tipo` (`cuantitativo` o `tarea_evidencia`), `unidad` (`baños`, `L/día`, `m²`, nulo en tareas), `amenaza_codigo` FK (nulo en servicios generales), `parametro_clave` (a `ref.parametros_reglas`), `regla_texto`. **`animals`** (atención de animales de compañía) es una tarea **sin cifra**: no se verificó un estándar tipo Esfera para mascotas y no se inventa uno. Respaldo: Ley 2474 de 2025, arts. 3, 11 (protocolos sectoriales, incluido el alojamiento temporal de animales) y 12 (planes territoriales).
 
 ### `ref.responsabilidades` · Público
 PK compuesta (`servicio_codigo`, `entidad_id`, `contexto`). `papel` (`lidera`, `apoya`, `valida`), `bloquea_activacion` (boolean), `contexto` (`albergue`, `punto_salud`...), `estado_validacion` (`propuesta` hasta que la Secretaría la valide), `fuente`. Semilla inicial: la matriz "propuesta sin validar" de `docs/propuesta_cali_activa.md` (baños: UAESP; agua y energía: EMCALI; superficie cubierta: Gestión del Riesgo).
+
+### `ref.funciones_espacio` · Público
+Distingue **fases** (hallazgo de Japón, Turquía e Italia; `docs/referentes/REFERENTES_INTERNACIONALES.md`). PK `codigo`: `punto_reunion_inmediata` (fase `inmediata`, horas), `albergue` (fase `temporal`, días o semanas), `acopio`, `punto_agua`, `punto_salud`, `punto_informacion`, `amortiguacion` (fase `apoyo`). Columnas: `fase` (`inmediata`, `temporal`, `apoyo`), `nombre_es`, `amenazas_aplicables` (text[] de `ref.amenazas`), `descripcion`. Un espacio puede ser apto para una función y una amenaza, y no para otra. `ops.decisiones_activacion.funcion` referencia esta tabla.
 
 ### `ref.parametros_reglas` · Público
 PK (`clave`, `version`). `valor` numeric, `unidad`, `fuente_url`, `vigente` boolean, `vigente_desde`. Semilla: `personas_por_bano = 20`, `litros_persona_dia = 15`, `m2_cubiertos_persona = 3.5` (Esfera 2018), `personas_maximas_escenario = 100000`, `umbral_supresion = 5` (propuesta).
@@ -72,6 +75,7 @@ Plantilla: `id`, `nombre`, `amenaza_codigo` (nulo = todas), `version`, `estado_v
 | huella | geometry(MultiPolygon,4326) | sí | Solo en EPOU (en deportivos es nulo) |
 | area_m2 | numeric | sí | Huella cartográfica, **no** superficie útil ni aforo |
 | metodo_evaluacion | text | no | `Intersección con toda la huella...` o `Cruce en el punto...` |
+| estado_proteccion_uso | text | no | `sin_dato` (por defecto), `protegido` o `en_riesgo_de_cambio_de_uso`. Lección de Estambul: las áreas de reunión designadas se pierden por construcción (`docs/referentes/`) |
 | es_simulado | boolean | no | `false` |
 Los dos tipos de fuente pueden describir el mismo predio: no sumar aforos ni superficies entre fuentes.
 
@@ -87,7 +91,7 @@ Historia verificable de lo que hoy es `null` en la app.
 |---|---|---|---|
 | id | bigint PK | no | |
 | espacio_id | text FK | no | |
-| atributo | text | no | `capacidad_personas`, `banos`, `agua_l_dia`, `evaluacion_estructural_vigente`, `accesibilidad`, `energia_respaldo`, `disponibilidad`, `administracion_acceso`, `horario` |
+| atributo | text | no | `capacidad_personas`, `banos`, `agua_l_dia`, `evaluacion_estructural_vigente`, `accesibilidad`, `energia_respaldo`, `disponibilidad`, `administracion_acceso`, `horario`, `acepta_animales_compania` (sí/no), `zona_animales` (¿hay zona separada?, sí/no), `capacidad_animales` (número, sin cifra de referencia) |
 | valor_num / valor_texto / valor_fecha | numeric / text / date | sí | Solo uno según el atributo. `valor_texto` pasa por el filtro de datos personales |
 | unidad | text | sí | |
 | estado | text | no | `declarado`, `verificado`, `rechazado` |
@@ -135,10 +139,10 @@ PK (`rol`, `permiso`). La matriz de `ROLES_Y_PERMISOS.md` como datos, para que s
 `id` uuid, `creada_en`, `creada_por` (perfil), `amenaza_codigo` FK, `personas_escenario` (1 a 100.000), `origen_espacio_id` FK, `ambito` (texto del sector comparado), `version_reglas`, `candidatos` jsonb (id, distancia en m, razón), `resumen_cribado` jsonb (considerados, excluidos por cruce, pendientes de evidencia), `advertencias` text[], `es_simulado` (por defecto `true`). Se rellena con la salida de `compareCandidates()`. No admite UPDATE.
 
 ### `ops.decisiones_activacion` · Interno
-`id` uuid, `recomendacion_id` FK (nulo), `espacio_id` FK, `amenaza_codigo` FK, `funcion` (`albergue`, `acopio`, `punto_agua`, `punto_salud`, `punto_informacion`, `amortiguacion`), `acto_tipo` (`decreto`, `resolucion`, `acta_cmgrd`, `instruccion_secretaria`), `acto_numero`, `acto_fecha`, `justificacion` (obligatoria si no hay recomendación o el espacio difiere), `decidida_por` (perfil), `cargo_id`, `estado` (`vigente`, `en_desactivacion`, `cerrada`), `personas_estimadas` (nulo), `es_simulado`. Solo `api.registrar_decision_activacion` inserta.
+`id` uuid, `recomendacion_id` FK (nulo), `espacio_id` FK, `amenaza_codigo` FK, `funcion` FK a `ref.funciones_espacio` (`punto_reunion_inmediata`, `albergue`, `acopio`, `punto_agua`, `punto_salud`, `punto_informacion`, `amortiguacion`), `acto_tipo` (`decreto`, `resolucion`, `acta_cmgrd`, `instruccion_secretaria`), `acto_numero`, `acto_fecha`, `justificacion` (obligatoria si no hay recomendación o el espacio difiere), `decidida_por` (perfil), `cargo_id`, `estado` (`vigente`, `en_desactivacion`, `cerrada`), `personas_estimadas` (nulo), `es_simulado`. Solo `api.registrar_decision_activacion` inserta.
 
 ### `ops.brechas` · Interno
-`id` uuid, `decision_id` FK, `espacio_id` FK, `servicio_codigo` FK, `requerido` numeric, `unidad`, `existente` numeric (nulo = sin dato), `faltante` numeric **generada** (nulo si `existente` es nulo), `entidad_responsable_id` FK, `estado` (`por_medir`, `en_revision`, `asignada`, `en_ejecucion`, `cerrada`), `regla_texto`, `version_reglas`, `es_simulado`. Único (`decision_id`, `servicio_codigo`).
+`id` uuid, `decision_id` FK, `espacio_id` FK, `servicio_codigo` FK, `requerido` numeric (nulo en servicios de tipo tarea, como `animals`), `unidad`, `existente` numeric (nulo = sin dato), `faltante` numeric **generada** (nulo si `existente` es nulo), `entidad_responsable_id` FK, `estado` (`por_medir`, `en_revision`, `asignada`, `en_ejecucion`, `cerrada`), `regla_texto`, `version_reglas`, `es_simulado`. Único (`decision_id`, `servicio_codigo`).
 
 ### `ops.seguimientos` · Interno
 `id`, `brecha_id` FK, `estado_anterior`, `estado_nuevo`, `nota` (≤ 280, filtro de datos personales), `registrado_por`, `registrado_en`.
@@ -155,6 +159,7 @@ PK (`rol`, `permiso`). La matriz de `ROLES_Y_PERMISOS.md` como datos, para que s
 | tipo | text | no | `estado_espacio`, `necesidad`, `alerta_barrial` |
 | n_total, n_0_5, n_6_17, n_18_59, n_60_mas | integer ≥ 0 | sí | Conteos agregados; la suma de los grupos debe igualar el total |
 | n_discapacidad | integer ≥ 0 | sí | Opcional, sensible, solo agregado |
+| n_animales_compania | integer ≥ 0 | sí | Animales de compañía presentes, agregado; **sin datos de sus dueños**. Los animales de servicio no se cuentan aparte: se admiten siempre |
 | estado_servicios | jsonb | sí | Por servicio: `ok`, `falla`, `sin_dato` (claves de `ref.servicios`) |
 | observacion | text ≤ 280 | sí | Con filtro de datos personales. Pendiente de tu decisión (§9.5) |
 | creado_por / creado_en | uuid / timestamptz | no | |
@@ -175,9 +180,16 @@ Las vistas públicas suprimen celdas menores al umbral N.
 ### `aud.eventos` · Restringido
 `id` bigint, `ocurrido_en`, `actor_uuid` (nulo si es el sistema), `actor_rol`, `tabla`, `operacion`, `fila_id`, `cambios` jsonb (solo columnas no sensibles), `hash_previo` bytea, `hash` bytea = sha256(`hash_previo` + contenido). Sin nombres ni correos. `aud.verificaciones` guarda cada corrida de `verificar_cadena()`.
 
+## Fase 2 (diseño, sin SQL todavía): índice de aptitud y mapa de calor
+
+Detalle del método y de los límites legales en `docs/referentes/INDICE_APTITUD_Y_MAPA_DE_CALOR.md`. Tablas previstas, todas **públicas** (dato abierto derivado) y calculadas por un script reproducible:
+- `ref.criterios_aptitud`: `criterio`, `amenaza_codigo`, `funcion`, `peso`, `direccion` (más es mejor o peor), `fuente`, `version`, `estado_validacion` (`propuesta` hasta que expertos lo validen).
+- `geo.indice_aptitud`: `espacio_id`, `amenaza_codigo`, `funcion`, `version_modelo`, `puntaje` (0 a 100), `componentes` jsonb (cada criterio con su valor, peso y aporte), `calculado_en`. Siempre se presenta como **aptitud preliminar para revisión**, nunca como "espacio seguro".
+- `geo.mapa_calor_celdas`: `celda` (hexágono), `amenaza_codigo`, `funcion`, `puntaje_promedio`, `n_espacios`, `version_modelo`.
+
 ## `api`: única superficie expuesta
 
-Vistas (todas con `security_invoker`): `espacios`, `espacio_ficha`, `espacio_exposicion`, `comunas`, `barrios`, `zonas_amenaza`, `fuentes`, `entidades`, `responsabilidades`, `servicios`, `amenazas`, `parametros_reglas`, `resumen_territorial` (con supresión), `mi_perfil`, `mis_tareas`, `brechas`, `decisiones`, `reportes_comunitarios` (según zona), `auditoria` (solo auditor).
+Vistas (todas con `security_invoker`): `espacios`, `espacio_ficha`, `espacio_exposicion`, `comunas`, `barrios`, `zonas_amenaza`, `fuentes`, `entidades`, `responsabilidades`, `servicios`, `amenazas`, `funciones_espacio`, `parametros_reglas`, `resumen_territorial` (con supresión), `mi_perfil`, `mis_tareas`, `brechas`, `decisiones`, `reportes_comunitarios` (según zona), `auditoria` (solo auditor).
 Funciones RPC: `registrar_recomendacion`, `registrar_decision_activacion`, `actualizar_brecha`, `completar_tarea`, `crear_reporte_comunitario`, `registrar_medicion`, `validar_medicion`, `cerrar_retorno`, `cambiar_rol`, `suspender_usuario`, `traspasar_cargo`.
 Los **códigos** (`flood`, `toilets`...) coinciden con los de la app para que el frontend no traduzca.
 

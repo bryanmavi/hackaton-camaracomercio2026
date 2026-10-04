@@ -22,6 +22,8 @@ Raíz de la base de datos del proyecto (RETO-01 Cali Activa) para montarla en **
 6. [`../docs/cumplimiento/MATRIZ_NORMATIVA.md`](../docs/cumplimiento/MATRIZ_NORMATIVA.md): norma, control y evidencia; discusión de la región.
 7. [`../docs/cumplimiento/ENTES_DECISORES.md`](../docs/cumplimiento/ENTES_DECISORES.md): quién decide y ejecuta ante una emergencia en Cali.
 8. [`../docs/cumplimiento/RED_COMUNITARIA.md`](../docs/cumplimiento/RED_COMUNITARIA.md): juntas de acción comunal y administradores de conjuntos, y su capacitación.
+9. [`../docs/referentes/REFERENTES_INTERNACIONALES.md`](../docs/referentes/REFERENTES_INTERNACIONALES.md): ideas, normas y leyes del mundo por amenaza, y qué adoptamos.
+10. [`../docs/referentes/INDICE_APTITUD_Y_MAPA_DE_CALOR.md`](../docs/referentes/INDICE_APTITUD_Y_MAPA_DE_CALOR.md): diseño del mapa de calor de aptitud (fase 2).
 
 ## Reglas para quien trabaje aquí (también la IA del equipo)
 

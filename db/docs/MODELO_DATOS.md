@@ -132,5 +132,29 @@ Registro nominal de personas, envío real de SMS, Storage de fotos o documentos 
 5. **Texto libre:** ¿se permite `observacion` (280 caracteres con filtro) o solo campos estructurados? Lo más seguro es solo estructurados.
 6. **Idioma de los identificadores:** propongo tablas y columnas en español y códigos de amenaza y servicio en inglés (los de la app).
 7. **Repo público o privado** para `db/` (el repo es público hoy).
-8. **Animales (hallazgo nuevo):** la Ley 2474 de 2025 modificó la Ley 1523 para incluir a los animales en la gestión del riesgo (`docs/cumplimiento/FUENTES.md`). ¿Añadimos el servicio `animals` al catálogo y a las brechas de los albergues? Cuesta una fila en `ref.servicios` y no cambia el modelo.
-9. **Región de Supabase:** São Paulo (propuesta) o EE. UU. este (figura en la lista de la SIC). Ver `docs/cumplimiento/MATRIZ_NORMATIVA.md` §3.
+8. **Animales (decidido por ti el 3 de octubre, ya incorporado):** ver §10. Falta saber **qué entidad de Cali atiende animales** en un albergue y si el municipio cumplió el art. 12 de la Ley 2474 (plazo vencido el 9 de julio de 2026).
+9. **Funciones por fase:** ¿aceptas separar `punto_reunion_inmediata`, `albergue` y `acopio` (§11)? ¿El acopio va dentro del albergue, como en la maqueta, o aparte?
+10. **Región de Supabase:** São Paulo (propuesta) o EE. UU. este (figura en la lista de la SIC). Ver `docs/cumplimiento/MATRIZ_NORMATIVA.md` §3.
+
+## 10. Mascotas y animales (incorporado en el Hito 1b)
+
+**Respaldo (Ley 2474 de 2025, texto oficial leído):** la gestión del riesgo incluye a los animales; todas las personas y entidades tienen un deber de solidaridad con ellos, **pero prevalece la vida humana** si hay conflicto (art. 3). La UNGRD debe coordinar protocolos que incluyen el **alojamiento temporal** de animales (art. 11); las entidades territoriales debían ajustar sus planes **antes del 9 de julio de 2026** (art. 12); y los sistemas de información territoriales deben incluir información sobre animales e interoperar con el nacional (art. 14). Referentes: PETS Act de EE. UU., guía de mascotas de Japón, Código de Protección Civil de Italia (`docs/referentes/`).
+
+| Dónde | Cambio |
+|---|---|
+| `ref.servicios` | Nuevo servicio `animals` (atención de animales de compañía), tarea **sin cifra** |
+| `ref.responsabilidades` | Entidad por definir (¿Salud Pública y zoonosis, autoridad ambiental u otra?). No se asigna hasta verificarlo |
+| `geo.mediciones_espacio` | Atributos `acepta_animales_compania`, `zona_animales`, `capacidad_animales` |
+| `ops.reportes_comunitarios` | `n_animales_compania`, agregado y opcional |
+| `ref.protocolo_pasos` | Un paso de atención de animales |
+| Regla | Los **animales de servicio** siempre se admiten (principio del PETS Act; equivalente colombiano por verificar, quizá la Ley 1618 de 2013) |
+
+Excluido por diseño: registro de dueños o de animales individuales. Solo hay conteos y condiciones del espacio.
+
+## 11. Funciones por fase (incorporado en el Hito 1b)
+
+Japón (2013), Turquía e Italia separan el **punto de reunión inmediato** (horas) del **alojamiento temporal** (días o semanas) y del **acopio**. Se añade `ref.funciones_espacio` con la fase y las amenazas en que aplica, y `punto_reunion_inmediata` como función posible de una decisión. Un espacio apto como punto de reunión tras un sismo puede no serlo como albergue en una inundación. México impide que los refugios temporales funcionen como centros de acopio (por verificar): conviene decidir si la maqueta debe separarlos.
+
+## 12. Fase 2: índice de aptitud y mapa de calor (solo diseño)
+
+Mapas de calor de aptitud de los espacios públicos de toda la ciudad por sismo e inundación. Las tablas previstas están al final de `DICCIONARIO.md`; el método, los datos disponibles y los límites legales, en `docs/referentes/INDICE_APTITUD_Y_MAPA_DE_CALOR.md`. No se escribe SQL hasta aprobar el modelo.
