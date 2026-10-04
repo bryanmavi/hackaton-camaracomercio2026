@@ -48,8 +48,12 @@ Todas verifican permiso, alcance y, cuando aplica, MFA. Errores: `42501` sin per
 
 **Solo servidor** (clave `service_role`, nunca en el navegador): `idn.provisionar_perfil(...)` después de crear el usuario con la Admin API de Supabase, e `idn.anonimizar_perfil(user_id)` antes de borrarlo. **Hook de Auth:** `idn.custom_access_token_hook`, que se configura en Authentication → Hooks.
 
+## Rendimiento medido (PGlite, con los datos reales)
+
+Una ficha tarda 2 ms; `espacios` (2.991 filas), 36 ms; `zonas_amenaza` con GeoJSON, 76 ms; `espacio_ficha` completa, alrededor de 1 s; `resumen_territorial`, alrededor de 0,8 s. Para listas y mapas usa `espacios`; pide `espacio_ficha` por `id`.
+
 ## Lo que falta para conectar la app
 
-1. Cargar los datos reales (H2): un script que lea `maqueta3d/public/data/*.json` y llene `ref.fuentes`, `geo.comunas`, `geo.barrios`, `geo.espacios` y `geo.zonas_amenaza` verificando el `sha256` de `manifest.json`.
+1. Correr la carga de datos reales en el proyecto de Supabase (`npm run cargar`; el script ya está probado, ver `db/README.md`).
 2. Cambiar en la app la lectura de JSON estáticos por estas vistas, conservando los JSON como respaldo público.
 3. Crear las 13 cuentas de demostración (H5).

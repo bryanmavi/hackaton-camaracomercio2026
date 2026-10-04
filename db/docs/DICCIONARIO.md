@@ -27,6 +27,8 @@ El borrador de `db/supabase/migrations/` sigue este diccionario con estos ajuste
 | `acto_numero`, `acta_ref`, `evidencia_ref` | Filtro propio (`idn.referencia_valida`): letras, dígitos y `. - / º °`, sin `@` ni `+` | El filtro general rechazaría números de decreto como `4112.010.20.0391` |
 | Escrituras | Ningún rol de API tiene INSERT, UPDATE ni DELETE: todo pasa por funciones `api.*` | Una sola puerta, que verifica permiso, alcance y MFA |
 | Autorización | El rol y la vigencia se leen de `idn.perfiles` en cada consulta, no del JWT | Suspender o cambiar el rol surte efecto de inmediato |
+| `geo.organizaciones_comunitarias` | Nueva columna `id_fuente` (`oacid` de la JAC), única por fuente (migración 12) | Recargar el dataset sin duplicar |
+| `geo.zonas_amenaza` | `atributos` guarda de qué script se derivó la capa y, en licuación, el filtro (`sucep_licu > 0 o corrim_lat > 0`) | Se cargan las capas de la app (5 de 16 polígonos de licuación), para que los cruces sean idénticos |
 | Auditoría | `ops.lecturas_iot` no se audita | Simulada, de alto volumen y con 30 días de retención |
 
 ## `ref`: catálogos

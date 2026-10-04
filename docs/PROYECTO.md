@@ -3,7 +3,7 @@
 **Equipo:** William Ortiz, Herlin Echeverry, Pablo Arango, Bryan Martínez Villamarín
 **Reto:** RETO-01 Cali Activa: espacios públicos que se transforman para cuidar
 **Enfoque:** plan de contingencia multiamenaza (sismo, inundación y sequía/El Niño) para espacios públicos, con organismos y mecanismos para el antes, el durante y el después.
-**Última actualización:** 4 de octubre de 2026: borrador del SQL de la base de datos (Hito 1) con RLS, auditoría encadenada y 69 pruebas que pasan.
+**Última actualización:** 4 de octubre de 2026: carga de los datos reales de Cali en la base (Hito 2), probada; los cruces de PostGIS coinciden exactamente con los de la app.
 
 ---
 
@@ -531,10 +531,21 @@ Lo que la base hace cumplir por sí misma, sin depender del frontend:
 
 Validación: `cd db && npm install && npm test` aplica las migraciones en PGlite (PostgreSQL 18 + PostGIS 3.6 en WASM; aquí no hay Docker ni CLI de Supabase) y corre **69 pruebas, todas en verde**. Todo lo institucional (entidades, matriz de responsabilidades, protocolo de 11 pasos, funciones del espacio por amenaza) va como **propuesta**, sin plazos ni cifras inventadas. Los ajustes al pasar del diccionario al SQL están en `db/docs/DICCIONARIO.md` §0.
 
+## 6.27 Base de datos: carga de los datos reales (4 de octubre)
+
+`db/scripts/cargar_datos_reales.mjs` carga en la base los datos abiertos que ya usa la app, en una sola transacción y de forma repetible:
+- **Primero verifica la fuente:** el `sha256` y el conteo de los 9 archivos crudos de la IDESC coinciden con `maqueta3d/public/data/manifest.json`. Si uno no coincide, no toca la base.
+- **Carga:** 22 comunas, 342 barrios, 2.991 espacios (1.970 EPOU con huella + 1.021 escenarios deportivos con punto), 660 zonas de amenaza y las 182 JAC (organizaciones, no personas), con licencia, atribución y fecha de corte en `ref.fuentes`.
+- **Mismo resultado que la app:** con PostGIS (`ST_Intersects`) salen **884 espacios con cruce de inundación y 1.369 con cruce sísmico, idénticos uno a uno** a los que precalculó la app con Turf. Hallazgo: la capa sísmica de la app usa 5 de los 16 polígonos de microzonificación (los que tienen susceptibilidad a licuación o corrimiento); el filtro queda anotado en la base.
+- **Sin inventar:** 52 espacios sin comuna, 23 JAC cuyo código de barrio no aparece en la capa de barrios, y 3 huellas y 18 zonas con geometría no válida según GEOS se cargan tal como vienen y quedan reportadas.
+
+Validación (`cd db && npm test`): 69 pruebas del SQL y 17 de carga, entre ellas la idempotencia, la atomicidad ante una falla a mitad de camino y la lectura pública como `anon`. Falta correrla en un proyecto real de Supabase; la URL de conexión se pasa solo por la terminal.
+
 ## 7. Pendientes
 - [ ] **Base de datos:** el responsable de la BD revisa el SQL del Hito 1 y responde las 10 decisiones de `db/docs/MODELO_DATOS.md` §9 (el borrador asume el valor propuesto en cada una).
-- [ ] **Base de datos (H2):** script de carga de los datos reales (`maqueta3d/public/data/*.json` y las 182 JAC) con verificación de `sha256`.
-- [ ] **Base de datos (H3):** correr las migraciones y las pruebas en un proyecto real de Supabase (`dev`), configurar `api` como único esquema expuesto y el hook de Auth.
+- [x] **Base de datos (H2):** script de carga de los datos reales con verificación de `sha256` (sección 6.27).
+- [ ] Revisar las 3 huellas y las 18 zonas de amenaza con geometría no válida (¿reportarlas a la IDESC?), y las 23 JAC cuyo código de barrio no está en la capa de barrios.
+- [ ] **Base de datos (H3):** en un proyecto real de Supabase (`dev`): correr las migraciones y la carga (`npm run cargar`), configurar `api` como único esquema expuesto y activar el hook de Auth.
 - [x] Sustituir la descarga técnica principal por un informe de preparación legible, con todas las necesidades y opción de guardar como PDF.
 - [x] Integrar el fork de Herlin del 26 de septiembre (El kit y Word vigente) y publicar en GitHub Pages.
 - [x] Los 6 entregables del evento y el texto del pitch 4.2 (`entregables/entregables-evento/`).

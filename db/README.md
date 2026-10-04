@@ -8,7 +8,7 @@ Raíz de la base de datos del proyecto (RETO-01 Cali Activa) para montarla en **
 |---|---|---|
 | H1 | Modelo, diccionario, roles y decisiones | **En revisión** (`db/docs/`) |
 | H1 SQL | Esquema, catálogos, RLS, auditoría, API y 69 pruebas | **Borrador en revisión** (`db/supabase/migrations/`, `db/tests/`) |
-| H2 | Carga de datos reales (espacios, comunas, barrios, amenazas, JAC) | Pendiente |
+| H2 | Carga de datos reales (espacios, comunas, barrios, amenazas, JAC) | **Lista y probada** (`scripts/cargar_datos_reales.mjs`): falta correrla en Supabase |
 | H3 | Pruebas en Supabase real, CI y anclaje externo del hash | Pendiente (la RLS, la auditoría y las pruebas ya existen en borrador) |
 | H4 | Cumplimiento (Colombia e ISO 27000) | En curso (`docs/cumplimiento/`) |
 | H5 | Usuarios de demostración y guía de montaje | Pendiente |
@@ -18,10 +18,21 @@ Raíz de la base de datos del proyecto (RETO-01 Cali Activa) para montarla en **
 ```bash
 cd db
 npm install     # PGlite: PostgreSQL 18 + PostGIS 3.6 en WASM, solo para pruebas
-npm test        # aplica tests/shim_supabase.sql + las 11 migraciones y corre tests/*.test.sql
+npm test        # pruebas del SQL (tests/*.test.sql) y de la carga de datos reales (tests/carga.mjs)
 ```
 
 `tests/shim_supabase.sql` imita lo mínimo de Supabase (roles `anon`, `authenticated`, `service_role`, `auth.uid()`, `auth.jwt()`); **no se aplica en Supabase**. Las migraciones siguen el formato de la CLI de Supabase (`supabase db push`).
+
+## Cargar los datos reales (Hito 2)
+
+```bash
+cd db
+DATABASE_URL='postgresql://…?sslmode=require' npm run cargar   # la URL solo en tu terminal, nunca en el repo
+```
+
+En una transacción, y se puede repetir sin duplicar: verifica el `sha256` y el conteo de los 9 archivos crudos de la IDESC contra `maqueta3d/public/data/manifest.json`. Después carga 22 comunas, 342 barrios, 2.991 espacios, 660 zonas de amenaza (las capas derivadas que usa la app) y 182 JAC, y comprueba los conteos. Si algo no cuadra, deshace todo. Los cruces de PostGIS coinciden **exactamente** con los que precalculó la app: 884 espacios con cruce de inundación y 1.369 con cruce sísmico.
+
+Se carga tal como viene, sin inventar: 52 espacios sin comuna, 23 JAC cuyo código de barrio no está en la capa de barrios, y 3 huellas y 18 zonas que GEOS marca como geometrías no válidas (no se "reparan" en silencio; se listan con `select id from geo.espacios where not extensions.st_isvalid(huella)`).
 
 ## Estructura
 
@@ -34,7 +45,9 @@ npm test        # aplica tests/shim_supabase.sql + las 11 migraciones y corre te
 | `…08` | Permisos como datos, funciones de autorización y políticas RLS |
 | `…09` y `…10` | Vistas y funciones del esquema `api` (contrato en [`docs/CONTRATO_API.md`](docs/CONTRATO_API.md)) |
 | `…11` | Privilegios mínimos explícitos |
-| `tests/` | Shim, ejecutor y pruebas (69) |
+| `…12` | `id_fuente` de las organizaciones (para recargar las JAC sin duplicar) |
+| `scripts/cargar_datos_reales.mjs` | Carga del Hito 2 |
+| `tests/` | Shim, ejecutor, 69 pruebas de SQL y 17 de carga |
 
 ## Dónde leer
 
