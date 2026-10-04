@@ -39,6 +39,8 @@
 
 "propias" = filas de su entidad según la matriz de responsabilidades. "zona" = comunas o barrios de su perfil.
 
+**En el SQL** (`…08_permisos_y_rls.sql`) cada permiso es binario. Por eso la lectura agregada de `consulta` se llama `operativo.leer_agregado`, y "editar parámetros" de `gestion_riesgo` se llama `parametros.editar`, aparte de `catalogos.editar` (DATIC). Las funciones para editar catálogos, protocolo y entidades **no existen todavía**: por ahora esos cambios se hacen con migraciones.
+
 ## 3. Cuentas de demostración (13, ficticias)
 
 Todas con `es_simulado = true`, correo `@example.org`, alias institucional (no nombre de persona). Las contraseñas se generan al montar con `db/scripts/crear_usuarios_demo.mjs` (clave de servicio en variable de entorno local, nunca en el repo). MFA TOTP para `superusuario` y `gestion_riesgo`.

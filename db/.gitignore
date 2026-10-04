@@ -14,3 +14,6 @@ credenciales*
 *.dump
 *.sql.gz
 *.backup
+
+# Dependencias de las pruebas
+node_modules/

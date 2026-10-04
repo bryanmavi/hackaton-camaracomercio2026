@@ -1,6 +1,6 @@
 # Modelo de datos de Territorio Preparado (Hito 1, para revisión)
 
-> **Estado:** propuesta para que el responsable de la base de datos la revise y corrija. **No hay SQL todavía**: las migraciones (Hito 2) se escriben cuando este modelo quede aprobado.
+> **Estado:** propuesta para que el responsable de la base de datos la revise y corrija. **El SQL ya existe en borrador** (4 de octubre de 2026, `db/supabase/migrations/`, 69 pruebas en `db/tests/`). Asume el valor propuesto en cada decisión abierta de la §9; los cambios respecto a este documento están en `DICCIONARIO.md` §0.
 > **Motor:** PostgreSQL de Supabase con PostGIS. **Fecha:** 3 de octubre de 2026.
 > Fuentes de cada afirmación: `docs/cumplimiento/FUENTES.md` (registro obligatorio) y el Apéndice A del plan.
 

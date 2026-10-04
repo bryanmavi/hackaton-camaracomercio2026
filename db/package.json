@@ -1,0 +1,13 @@
+{
+  "name": "territorio-preparado-db",
+  "private": true,
+  "type": "module",
+  "description": "Migraciones de la base de datos de Territorio Preparado y sus pruebas en PGlite",
+  "scripts": {
+    "test": "node tests/ejecutar.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@electric-sql/pglite-postgis": "0.2.8"
+  }
+}

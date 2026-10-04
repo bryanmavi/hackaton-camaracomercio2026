@@ -3,6 +3,32 @@
 > Convenciones: `PK` llave primaria, `FK` llave foránea, `NULL` = desconocido (nunca cero). Clases de dato: **Público** (datos abiertos o catálogos), **Interno** (operativo no personal), **Restringido** (cuentas, auditoría, reportes comunitarios) y **Crítico** (claves y secretos: nunca en el repo ni en la BD de aplicación).
 > Los tipos son orientativos; el Hito 2 los fija en SQL. El fundamento legal de cada tabla se cierra en el Hito 4 contra el texto primario (ver `docs/cumplimiento/FUENTES.md`).
 
+## 0. Cambios al pasar a SQL (4 de octubre de 2026)
+
+El borrador de `db/supabase/migrations/` sigue este diccionario con estos ajustes, todos pendientes de tu revisión:
+
+| Dónde | Cambio | Por qué |
+|---|---|---|
+| `geo.mediciones_espacio` | Nueva columna `valor_bool` para los atributos sí/no (accesibilidad, energía, animales, evaluación estructural) | No guardar "sí" o "no" como texto libre. La evaluación estructural es `valor_bool` más `valor_fecha` y no admite texto, porque no hay concepto técnico |
+| `geo.mediciones_espacio` | CHECK `validado_por <> reportado_por` | Cuatro ojos: quien reporta no valida |
+| `ref.servicios` | Nueva columna `atributo_medicion` (`toilets` → `banos`, `water` → `agua_l_dia`) | El "existente" de una brecha sale de la última medición **verificada**, y define qué entidad valida cada atributo |
+| `ref.servicios` | Servicio `building-fire-perimeter` agregado | La app (`fire.ts`) también lo pide en incendio de edificación |
+| `ref.funciones_espacio` | Columna `estado_validacion` (`propuesta`) | Las amenazas en que aplica cada función no están validadas |
+| `ref.parametros_reglas` | `fuente_url` admite nulo y se agrega `nota` | El tope de 100.000 y el umbral N no tienen URL externa |
+| `ref.responsabilidades` | Índice único: una sola entidad `lidera` cada servicio en cada contexto; `contexto` es una FK a `ref.funciones_espacio` | De ahí se asigna la brecha sin ambigüedad |
+| `ref.protocolo_plantillas` | Columna `vigente` | Para versionar el protocolo sin borrar |
+| `ref.protocolo_pasos` | `entidad_id` y `plazo_ref_horas` pueden ser `NULL` | Animales y registro nominal no tienen entidad verificada, y ningún plazo tiene fuente |
+| `ops.decisiones_activacion` | Columna `decidida_en` | Fecha del registro, distinta de `acto_fecha` |
+| `ops.retornos` | Columna `cerrado_por` | Trazabilidad de quién cerró |
+| `ops.brechas` | `entidad_responsable_id` admite `NULL` | Un servicio sin responsable verificado queda "sin asignar", no se inventa |
+| `ops.notificaciones` | Columna `creado_en` | Orden de los borradores |
+| `idn.perfiles` | `user_id` **sin** FK a `auth.users` | Para borrar la cuenta en Auth al suprimir un titular sin perder el registro institucional que apunta a ella |
+| `idn.rol_permisos` | Columna `requiere_aal2` | MFA por permiso (`decision.activar`, `usuarios.gestionar`) |
+| `acto_numero`, `acta_ref`, `evidencia_ref` | Filtro propio (`idn.referencia_valida`): letras, dígitos y `. - / º °`, sin `@` ni `+` | El filtro general rechazaría números de decreto como `4112.010.20.0391` |
+| Escrituras | Ningún rol de API tiene INSERT, UPDATE ni DELETE: todo pasa por funciones `api.*` | Una sola puerta, que verifica permiso, alcance y MFA |
+| Autorización | El rol y la vigencia se leen de `idn.perfiles` en cada consulta, no del JWT | Suspender o cambiar el rol surte efecto de inmediato |
+| Auditoría | `ops.lecturas_iot` no se audita | Simulada, de alto volumen y con 30 días de retención |
+
 ## `ref`: catálogos
 
 ### `ref.fuentes` · Público
