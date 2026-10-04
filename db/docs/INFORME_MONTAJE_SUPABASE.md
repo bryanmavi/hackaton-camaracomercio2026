@@ -2,7 +2,7 @@
 
 > **Proyecto:** Territorio Preparado, RETO-01 Cali Activa (Hackathon Smart City Expo Cali 2026).
 > **Fecha:** 4 de octubre de 2026. **Quién lo hizo:** William Ortiz, con Claude Code.
-> **Estado:** la base está **montada en Supabase `dev`**: 12 migraciones aplicadas y la API expone solo `api`, verificado contra el proyecto real. Faltan el MFA, el hook del token y la carga de los datos reales (sección 8).
+> **Estado:** la base está **montada en Supabase `dev`**: 12 migraciones aplicadas y la API expone solo `api`, verificado contra el proyecto real. Los datos reales están cargados y verificados. Faltan el MFA, el hook del token y cambiar la contraseña de la base (sección 8).
 > **Este documento no contiene contraseñas, claves ni datos personales.**
 
 ## 1. Resumen
@@ -14,7 +14,7 @@
 | Datos reales (Hito 2) | Script de carga con verificación `sha256`: 22 comunas, 342 barrios, 2.991 espacios, 660 zonas de amenaza y 182 juntas de acción comunal |
 | Pruebas | 69 pruebas del SQL y 17 de la carga, **todas en verde** (`cd db && npm test`) |
 | Repositorio | Pasado a **privado**; 3 integrantes invitados con permiso de escritura; pull request #2 abierto hacia `main` |
-| Supabase | Proyecto `dev` creado (ref `rqxltixtsiqsakxapdue`), CLI enlazada, **12 de 12 migraciones aplicadas** |
+| Supabase | Proyecto `dev` (ref `rqxltixtsiqsakxapdue`, región **EE. UU. este**, `us-east-1`), **12 de 12 migraciones aplicadas** y **datos reales cargados** |
 
 ## 2. Qué se hizo, paso a paso
 
@@ -36,6 +36,16 @@
 | `api.decisiones` y `api.auditoria` | **Bloqueado** (42501): solo con sesión y rol |
 | Función de escritura `registrar_medicion` | **Bloqueada** (42501): el público no escribe |
 | Esquemas `ops` y `public` | **No expuestos** (PGRST106) |
+
+11. **Carga de los datos reales.** La primera conexión falló por verificación TLS (`SELF_SIGNED_CERT_IN_CHAIN`): Supabase firma sus certificados con su propia CA. No se desactivó la verificación. Se descargó la CA raíz pública de Supabase ("Supabase Root 2021 CA", vigente hasta 2031, huella SHA-256 `80:70:25:AD…:CA:FA`) a `db/certs/` y se comprobó con `openssl` que el pooler presenta un certificado válido para su nombre (`Verify return code: 0`). La carga se corrió con `sslmode=verify-full`:
+
+| Verificación en Supabase | Resultado |
+|---|---|
+| Archivos crudos (`sha256` y conteo) | 9 de 9 coinciden con el manifiesto |
+| Cargado | 22 comunas, 342 barrios, 2.991 espacios, 660 zonas de amenaza y 182 JAC |
+| API pública (`anon`, conteo exacto) | `espacios` 2.991, `comunas` 22, `barrios` 342, `zonas_amenaza` 660 |
+| Cruces de PostGIS frente a los de la app | Inundación 884 y sísmico 1.369: **0 diferencias** |
+| Ficha pública de `epou-8413` | Nombre, comuna y área de la fuente; baños y capacidad en `null`; disponibilidad "Por confirmar" |
 
 ## 3. Qué quedó en la base
 
@@ -66,7 +76,7 @@ Todo lo institucional (entidades, matriz de responsabilidades, protocolo, funcio
 |---|---|
 | 69 pruebas de seguridad y flujo (PGlite) | Todas pasan |
 | 17 pruebas de carga con los datos reales (PGlite) | Todas pasan; la carga se puede repetir y se deshace completa ante una falla |
-| Cruces de PostGIS frente a los de la app | 0 diferencias en 2.991 espacios |
+| Cruces de PostGIS frente a los de la app (PGlite y Supabase) | 0 diferencias en 2.991 espacios |
 | Huellas `sha256` de los 9 archivos crudos de la IDESC | Coinciden con `manifest.json` |
 | `supabase db push --dry-run` | Solo las 12 migraciones esperadas |
 | `supabase db push` | 12 de 12 aplicadas sin errores |
@@ -82,6 +92,7 @@ Tiempos medidos en PGlite: una ficha, 2 ms; la lista de 2.991 espacios, 36 ms; t
 | `db/supabase/migrations/` | Las 12 migraciones (nunca se edita una ya aplicada: los cambios van en una migración nueva) |
 | `db/supabase/config.toml` | Configuración de la CLI (sin secretos) |
 | `db/scripts/cargar_datos_reales.mjs` | Carga del Hito 2 |
+| `db/certs/supabase-prod-ca-2021.crt` | CA raíz **pública** de Supabase, para verificar TLS (no es un secreto) |
 | `db/tests/` | Imitación mínima de Supabase para las pruebas, ejecutor y pruebas |
 | `db/docs/` | Modelo, diccionario, roles, decisiones, contrato de la API, este informe y la guía de acceso del equipo |
 | `docs/cumplimiento/` | Normas verificadas, entes decisores, red comunitaria y matriz normativa |
@@ -95,13 +106,14 @@ La contraseña de la base de datos, el token de la CLI, la clave `service_role` 
 1. ☑ **Exponer solo `api`:** hecho y verificado (`public` responde "no expuesto").
 2. ☐ **Activar el MFA TOTP:** *Authentication → Multi-Factor*.
 3. ☐ **Activar el hook del token:** *Authentication → Hooks → Customize Access Token (JWT) Claims*, tipo Postgres, esquema `idn`, función `custom_access_token_hook`.
-4. ☐ **Cargar los datos reales:** copia el host del *Session pooler* (botón **Connect**) y escribe la contraseña de forma oculta, para que no quede en el historial:
+4. ☑ **Datos reales cargados y verificados.** Para recargar (es idempotente), con la contraseña escrita de forma oculta:
 ```
 cd ~/hackathon-cali-2026/db
 read -rs PGPASSWORD && export PGPASSWORD
-DATABASE_URL='postgresql://postgres.rqxltixtsiqsakxapdue@HOST-DEL-POOLER:5432/postgres?sslmode=verify-full' npm run cargar
+DATABASE_URL="postgresql://postgres.rqxltixtsiqsakxapdue@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=verify-full&sslrootcert=$PWD/certs/supabase-prod-ca-2021.crt" npm run cargar
 unset PGPASSWORD
 ```
+4b. ☐ **Cambiar la contraseña de la base**, porque quedó expuesta en el chat y en el historial de la terminal: *Project Settings → Database → Reset database password*. Después, volver a hacer `npx supabase link` en una terminal normal y borrar la línea del historial.
 5. ☐ **Invitar al equipo en Supabase:** *Organization settings → Team → Invite member*, con el rol **Developer** (guía aparte: `ACCESO_EQUIPO`).
 6. ☐ **Revisar y fusionar el PR #2.** Lo hace el responsable de la base de datos, que además responde las 10 decisiones abiertas de `MODELO_DATOS.md` §9.
 7. ☐ **Hito 5:** crear las 13 cuentas de demostración por rol, para probar la app con cada perfil.
@@ -113,4 +125,5 @@ unset PGPASSWORD
 - **La autorización lee la base, no el token**, para que la suspensión sea inmediata.
 - **Se cargan las capas derivadas de la app**, no las crudas. Así los cruces son idénticos: la capa sísmica de la app usa 5 de los 16 polígonos de microzonificación, los que tienen susceptibilidad a licuación o corrimiento.
 - **Los datos se cargan tal como vienen.** No se inventa ni se corrige en silencio: 52 espacios sin comuna, 23 juntas con un código de barrio que no está en la capa, y 3 huellas y 18 zonas con geometría no válida se cargan así y quedan reportadas.
-- **La conexión verifica el certificado TLS**: no se desactiva la verificación.
+- **La conexión verifica el certificado TLS** contra la CA pública de Supabase (`db/certs/`); no se desactiva la verificación.
+- **Región:** el proyecto quedó en EE. UU. este (`us-east-1`). Esto resuelve en la práctica la decisión §9.10 para `dev`: EE. UU. figura en la lista de la SIC (Circular 005 de 2017) y Brasil no.

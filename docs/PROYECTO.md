@@ -547,6 +547,7 @@ Validación (`cd db && npm test`): 69 pruebas del SQL y 17 de carga, entre ellas
 - **Pull request:** la base de datos va en el PR #2 (`db/esquema-inicial` → `main`).
 - **Supabase `dev`:** proyecto `rqxltixtsiqsakxapdue`, creado con la cuenta de GitHub. La CLI de Supabase quedó como dependencia de `db/`, con `db/supabase/config.toml`. Las **12 migraciones se aplicaron** con `supabase db push`.
 - **API verificada en Supabase real:** solo se expone el esquema `api`. Como público se leen los catálogos; las decisiones, la auditoría y las escrituras quedan bloqueadas, y `ops` y `public` no están expuestos.
+- **Datos reales en Supabase:** 2.991 espacios, 660 zonas, 22 comunas, 342 barrios y 182 JAC, con los mismos cruces de amenaza que la app (0 diferencias). Región del proyecto: EE. UU. este (`us-east-1`).
 - **Documentos:** `db/docs/INFORME_MONTAJE_SUPABASE.pdf` (qué se hizo, con el detalle) y `db/docs/ACCESO_EQUIPO.pdf` (paso a paso para cada integrante).
 
 ## 7. Pendientes
@@ -554,7 +555,8 @@ Validación (`cd db && npm test`): 69 pruebas del SQL y 17 de carga, entre ellas
 - [x] **Base de datos (H2):** script de carga de los datos reales con verificación de `sha256` (sección 6.27).
 - [ ] Revisar las 3 huellas y las 18 zonas de amenaza con geometría no válida (¿reportarlas a la IDESC?), y las 23 JAC cuyo código de barrio no está en la capa de barrios.
 - [x] **Base de datos (H3):** migraciones aplicadas en Supabase `dev` y `api` como único esquema expuesto (sección 6.28).
-- [ ] Supabase `dev`: activar el MFA TOTP y el hook del token, y correr la carga de datos reales (`npm run cargar`).
+- [x] Supabase `dev`: datos reales cargados y verificados (2.991 espacios; cruces idénticos a la app; TLS verificado con la CA de Supabase).
+- [ ] Supabase `dev`: activar el MFA TOTP y el hook del token, y **cambiar la contraseña de la base** (quedó expuesta en el chat).
 - [ ] Cada integrante acepta la invitación, cierra su copia pública y sigue `db/docs/ACCESO_EQUIPO.pdf`. William los invita a la organización de Supabase con el rol Developer.
 - [x] Sustituir la descarga técnica principal por un informe de preparación legible, con todas las necesidades y opción de guardar como PDF.
 - [x] Integrar el fork de Herlin del 26 de septiembre (El kit y Word vigente) y publicar en GitHub Pages.

@@ -14,7 +14,8 @@
 //
 // Uso contra Supabase o cualquier PostgreSQL (la URL vive SOLO en tu terminal, nunca en el repo):
 //   cd db && read -rs PGPASSWORD && export PGPASSWORD      # la contraseña no queda en el historial
-//   DATABASE_URL='postgresql://postgres.<ref>@<host-del-session-pooler>:5432/postgres?sslmode=verify-full' npm run cargar
+//   DATABASE_URL="postgresql://postgres.<ref>@<host-del-session-pooler>:5432/postgres?sslmode=verify-full&sslrootcert=$PWD/certs/supabase-prod-ca-2021.crt" npm run cargar
+// certs/supabase-prod-ca-2021.crt es la CA raíz PÚBLICA de Supabase (no es un secreto); sin ella falla la verificación TLS.
 //   unset PGPASSWORD
 // Las pruebas (tests/carga.mjs) importan cargarDatosReales() y lo corren contra PGlite.
 
@@ -240,8 +241,10 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   try {
     await cliente.connect();
   } catch (e) {
-    console.error(`No se pudo conectar a la base (${e.code ?? e.message}). Revisa el host del Session pooler, ` +
-      'el usuario postgres.<ref> y la contraseña (PGPASSWORD). No se tocó nada.');
+    const pista = e.code === 'SELF_SIGNED_CERT_IN_CHAIN'
+      ? 'Agrega &sslrootcert=<ruta a db/certs/supabase-prod-ca-2021.crt> a la URL.'
+      : 'Revisa el host del Session pooler, el usuario postgres.<ref> y la contraseña (PGPASSWORD).';
+    console.error(`No se pudo conectar a la base (${e.code ?? e.message}). ${pista} No se tocó nada.`);
     process.exit(1);
   }
   try {

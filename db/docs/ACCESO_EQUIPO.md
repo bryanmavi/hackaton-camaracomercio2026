@@ -102,7 +102,13 @@ npx supabase login
 npx supabase link --project-ref rqxltixtsiqsakxapdue
 ```
    `login` abre el navegador; `link` pide la contraseña de la base, que se escribe solo ahí.
-3. Para aplicar migraciones, mira primero qué entraría y después aplica:
+3. Para conectarte por fuera de la CLI (por ejemplo, la carga de datos), usa siempre la verificación TLS con la CA pública del repo:
+```
+read -rs PGPASSWORD && export PGPASSWORD
+DATABASE_URL="postgresql://postgres.rqxltixtsiqsakxapdue@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=verify-full&sslrootcert=$PWD/certs/supabase-prod-ca-2021.crt" npm run cargar
+unset PGPASSWORD
+```
+4. Para aplicar migraciones, mira primero qué entraría y después aplica:
 ```
 npx supabase db push --dry-run
 npx supabase db push
