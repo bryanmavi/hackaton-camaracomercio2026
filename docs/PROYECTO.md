@@ -3,7 +3,7 @@
 **Equipo:** William Ortiz, Herlin Echeverry, Pablo Arango, Bryan Martínez Villamarín
 **Reto:** RETO-01 Cali Activa: espacios públicos que se transforman para cuidar
 **Enfoque:** plan de contingencia multiamenaza (sismo, inundación y sequía/El Niño) para espacios públicos, con organismos y mecanismos para el antes, el durante y el después.
-**Última actualización:** 4 de octubre de 2026: 13 cuentas de demostración por rol creadas y verificadas en Supabase `dev` (Hito 5).
+**Última actualización:** 4 de octubre de 2026: la app lee de la base de datos (con respaldo estático) y tiene la pestaña Operación con inicio de sesión, verificación en dos pasos y acciones por rol.
 
 ---
 
@@ -556,6 +556,14 @@ Se crearon en Supabase `dev` las **13 cuentas de demostración** (`db/scripts/cr
 
 Prueba de punta a punta en Supabase real: las 13 cuentas inician sesión con su rol y el token trae el claim del hook. La base bloquea a `gestion_riesgo` sin MFA, a una entidad que intenta decidir, a una junta fuera de su zona y a un reporte cuyos grupos de edad no suman, y no deja a `consulta` ver brechas ni auditoría. La cadena de auditoría verifica bien (68 eventos). Falta en la app la pantalla de inicio de sesión y la de inscripción del factor TOTP.
 
+## 6.30 La app conectada a la base de datos (4 de octubre)
+
+- **Lectura desde `api`:** la app lee el territorio desde la base. Sin configuración, o si la base no responde, usa los JSON estáticos y lo dice en el encabezado. La demo pública de GitHub Pages sigue en modo estático.
+- **Mismos datos:** en PGlite son idénticos campo por campo; en Supabase real también, salvo diferencias de coordenadas menores a 10⁻¹³ grados (redondeo de la API).
+- **Error corregido:** paginar con un orden repetido duplicaba filas entre páginas.
+- **Pestaña 06 Operación:** inicio de sesión con las cuentas de demostración, verificación en dos pasos con código QR, y acciones según el rol: registrar decisiones con su acto administrativo (las necesidades salen de `planning.ts`), avanzar brechas, completar tareas, cerrar retornos y reportar conteos comunitarios.
+- **Pruebas:** las 23 unitarias y las 22 de navegador siguen pasando, y la prueba de humo contra Supabase real salió bien.
+
 ## 7. Pendientes
 - [ ] **Base de datos:** el responsable de la BD revisa el SQL del Hito 1 y responde las 10 decisiones de `db/docs/MODELO_DATOS.md` §9 (el borrador asume el valor propuesto en cada una).
 - [x] **Base de datos (H2):** script de carga de los datos reales con verificación de `sha256` (sección 6.27).
@@ -565,7 +573,8 @@ Prueba de punta a punta en Supabase real: las 13 cuentas inician sesión con su 
 - [x] Hook del token activo (verificado: el token trae `user_role`).
 - [x] **Hito 5:** 13 cuentas de demostración creadas y verificadas (sección 6.29).
 - [ ] Supabase `dev`: activar el MFA TOTP y **cambiar la contraseña de la base** (quedó expuesta en el chat).
-- [ ] App: pantalla de inicio de sesión e inscripción del factor TOTP; conectar la lectura de datos a `api`.
+- [x] App: lectura desde `api`, inicio de sesión, verificación en dos pasos y pestaña Operación (sección 6.30).
+- [ ] App: probar con MFA real el registro de una decisión; agregar la declaración y validación de mediciones; bajar el tiempo de carga desde la base (≈8,5 s).
 - [ ] Cada integrante acepta la invitación, cierra su copia pública y sigue `db/docs/ACCESO_EQUIPO.pdf`. William los invita a la organización de Supabase con el rol Developer.
 - [x] Sustituir la descarga técnica principal por un informe de preparación legible, con todas las necesidades y opción de guardar como PDF.
 - [x] Integrar el fork de Herlin del 26 de septiembre (El kit y Word vigente) y publicar en GitHub Pages.

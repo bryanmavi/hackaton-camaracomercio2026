@@ -136,39 +136,41 @@ export async function cargarDatosReales(db, { registro = console.log } = {}) {
         n_registros = excluded.n_registros`, [JSON.stringify(fuentes)]);
 
     await db.query(`
-      insert into geo.comunas (codigo, nombre, geom, fuente_clave)
+      insert into geo.comunas (codigo, nombre, geom, fuente_clave, orden_fuente)
       select f -> 'properties' ->> 'code', f -> 'properties' ->> 'name',
-             extensions.st_multi(extensions.st_setsrid(extensions.st_geomfromgeojson(f ->> 'geometry'), 4326)), 'communes'
-      from jsonb_array_elements($1::jsonb -> 'features') f
-      on conflict (codigo) do update set nombre = excluded.nombre, geom = excluded.geom, fuente_clave = excluded.fuente_clave`,
+             extensions.st_multi(extensions.st_setsrid(extensions.st_geomfromgeojson(f ->> 'geometry'), 4326)), 'communes', n
+      from jsonb_array_elements($1::jsonb -> 'features') with ordinality as t (f, n)
+      on conflict (codigo) do update set nombre = excluded.nombre, geom = excluded.geom, fuente_clave = excluded.fuente_clave,
+        orden_fuente = excluded.orden_fuente`,
       [fc(capas.comunas)]);
 
     await db.query(`
-      insert into geo.barrios (codigo, nombre, comuna_codigo, geom, fuente_clave)
+      insert into geo.barrios (codigo, nombre, comuna_codigo, geom, fuente_clave, orden_fuente)
       select f -> 'properties' ->> 'code', f -> 'properties' ->> 'name', f -> 'properties' ->> 'commune',
-             extensions.st_multi(extensions.st_setsrid(extensions.st_geomfromgeojson(f ->> 'geometry'), 4326)), 'neighborhoods'
-      from jsonb_array_elements($1::jsonb -> 'features') f
+             extensions.st_multi(extensions.st_setsrid(extensions.st_geomfromgeojson(f ->> 'geometry'), 4326)), 'neighborhoods', n
+      from jsonb_array_elements($1::jsonb -> 'features') with ordinality as t (f, n)
       on conflict (codigo) do update set nombre = excluded.nombre, comuna_codigo = excluded.comuna_codigo,
-        geom = excluded.geom, fuente_clave = excluded.fuente_clave`, [fc(capas.barrios)]);
+        geom = excluded.geom, fuente_clave = excluded.fuente_clave, orden_fuente = excluded.orden_fuente`, [fc(capas.barrios)]);
 
     // Espacios: upsert (las decisiones y mediciones los referencian, nunca se borran).
     // `estado_proteccion_uso` y `es_simulado` no se tocan en una recarga.
     await db.query(`
       insert into geo.espacios (id, fuente_clave, nombre, tipo, condicion, comuna_codigo, barrio_nombre, comuna_fuente,
-                                barrio_fuente, limite_ambiguo, punto, huella, area_m2, metodo_evaluacion)
+                                barrio_fuente, limite_ambiguo, punto, huella, area_m2, metodo_evaluacion, orden_fuente)
       select p ->> 'id', p ->> 'sourceKey', p ->> 'name', p ->> 'type', p ->> 'condition', p ->> 'commune',
              p ->> 'neighborhood', p ->> 'sourceCommune', p ->> 'sourceNeighborhood',
              coalesce((p ->> 'boundaryAmbiguous')::boolean, false),
              extensions.st_setsrid(extensions.st_point((p -> 'coordinates' ->> 0)::float8, (p -> 'coordinates' ->> 1)::float8), 4326),
              case when f -> 'geometry' ->> 'type' in ('Polygon', 'MultiPolygon')
                   then extensions.st_multi(extensions.st_setsrid(extensions.st_geomfromgeojson(f ->> 'geometry'), 4326)) end,
-             (p ->> 'areaM2')::numeric, p ->> 'assessmentMethod'
-      from jsonb_array_elements($1::jsonb -> 'features') f, lateral (select f -> 'properties' as p) x
+             (p ->> 'areaM2')::numeric, p ->> 'assessmentMethod', n
+      from jsonb_array_elements($1::jsonb -> 'features') with ordinality as t (f, n), lateral (select f -> 'properties' as p) x
       on conflict (id) do update set
         fuente_clave = excluded.fuente_clave, nombre = excluded.nombre, tipo = excluded.tipo, condicion = excluded.condicion,
         comuna_codigo = excluded.comuna_codigo, barrio_nombre = excluded.barrio_nombre, comuna_fuente = excluded.comuna_fuente,
         barrio_fuente = excluded.barrio_fuente, limite_ambiguo = excluded.limite_ambiguo, punto = excluded.punto,
-        huella = excluded.huella, area_m2 = excluded.area_m2, metodo_evaluacion = excluded.metodo_evaluacion`,
+        huella = excluded.huella, area_m2 = excluded.area_m2, metodo_evaluacion = excluded.metodo_evaluacion,
+        orden_fuente = excluded.orden_fuente`,
       [fc(capas.espacios)]);
 
     // Zonas de amenaza: nada las referencia (la exposición es una vista), así que se reemplazan.
@@ -181,7 +183,8 @@ export async function cargarDatosReales(db, { registro = console.log } = {}) {
                   then '{"derivada_de":"maqueta3d/scripts/build-territory.mjs","filtro":"sucep_licu > 0 o corrim_lat > 0"}'::jsonb
                   else '{"derivada_de":"maqueta3d/scripts/build-territory.mjs"}'::jsonb end,
              extensions.st_multi(extensions.st_setsrid(extensions.st_geomfromgeojson(f ->> 'geometry'), 4326))
-      from jsonb_array_elements($1::jsonb -> 'features') f`, [fc(capas.zonas), JSON.stringify(TIPO_AMENAZA)]);
+      from jsonb_array_elements($1::jsonb -> 'features') with ordinality as t (f, n)
+      order by n`, [fc(capas.zonas), JSON.stringify(TIPO_AMENAZA)]);   // el id sigue el orden del archivo
 
     // JAC: organizaciones, no personas. El barrio se asigna solo si el código existe en la capa de barrios.
     await db.query(`

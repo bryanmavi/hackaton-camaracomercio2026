@@ -138,7 +138,17 @@ unset PGPASSWORD
 | `superusuario` ve las cuentas; gestiona usuarios sin MFA | Ve 13; la gestión queda bloqueada |
 | Auditor verifica la cadena de auditoría | Correcta (68 eventos) |
 
-## 10. Decisiones tomadas en esta sesión
+## 10. La app conectada a la base
+
+- **Lectura:** la app (`maqueta3d`) lee el territorio desde el esquema `api` cuando tiene `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`. Si no, o si la base no responde, usa los JSON estáticos y lo indica en el encabezado. La demo de GitHub Pages sigue en modo estático.
+- **Paridad comprobada:** en PGlite, los 2.991 espacios, 22 comunas, 342 barrios y 660 zonas son idénticos a los JSON campo por campo. En Supabase real también, salvo las coordenadas del punto representativo: difieren como máximo en 1,4·10⁻¹⁴ grados, porque la API redondea a 15 cifras.
+- **Error encontrado y corregido:** la primera lectura desde Supabase paginaba con un orden repetido (`zona_id`), y eso duplica o salta filas entre páginas. Ahora todas las paginaciones usan un orden único.
+- **Migración 14:** vista `api.mediciones_verificadas` y columna `orden_fuente` (la posición en el archivo de la IDESC), para que listas y mapa salgan en el mismo orden. Los datos se recargaron en Supabase.
+- **Pestaña 06 Operación:** inicio de sesión, verificación en dos pasos (inscripción con código QR) y, según los permisos de `api.mi_perfil`, registrar decisiones con su acto administrativo (las necesidades salen de `planning.ts`), avanzar brechas, completar tareas, cerrar retornos y enviar reportes comunitarios.
+- **Pruebas:** 23 unitarias y 22 de navegador de la app siguen pasando en modo estático. La prueba de humo contra Supabase real confirmó: encabezado "Base de datos"; UAESP inicia sesión y ve su perfil; la Secretaría ve la verificación en dos pasos, con la decisión bloqueada hasta completarla.
+- **Pendiente:** la lectura completa tarda unos 8,5 s desde Colombia. Se puede mejorar con vistas más livianas o caché. Falta probar en el navegador el registro de una decisión con MFA real, y declarar y validar mediciones desde la app.
+
+## 11. Decisiones tomadas en esta sesión
 
 - **Las pruebas corren en PGlite**, sin Docker ni Supabase local: cualquier integrante las corre con `npm test`.
 - **Los catálogos van en migraciones**, no en `seed.sql`, porque el proyecto se arma solo con migraciones (ADR-0009).

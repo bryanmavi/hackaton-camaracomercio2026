@@ -11,6 +11,7 @@
 | `espacio_huellas` | La huella GeoJSON de cada espacio EPOU (pedir solo las necesarias) |
 | `espacio_ficha` | La ficha completa: fuente + última medición **verificada** + cruces de amenaza (`cruce_inundacion_fluvial`…). `disponibilidad` vale "Por confirmar con la entidad responsable" si no hay dato |
 | `espacio_exposicion` | Cruces espacio × zona de amenaza. Sin cruce no significa sin amenaza |
+| `mediciones_verificadas` | Última medición **verificada** por espacio y atributo (ligera; la usa la app para capacidad, baños, agua y disponibilidad) |
 | `comunas`, `barrios`, `zonas_amenaza` | Con `geometria` en GeoJSON |
 | `amenazas`, `servicios`, `funciones_espacio`, `parametros_reglas` | Catálogos. `parametros_reglas` reemplaza las constantes de `planningRules` |
 | `entidades`, `responsabilidades` | Matriz de responsabilidades, marcada `propuesta` |
@@ -47,6 +48,14 @@ Todas verifican permiso, alcance y, cuando aplica, MFA. Errores: `42501` sin per
 | `verificar_auditoria()` | `auditoria.leer` | Recorre la cadena de hash |
 
 **Solo servidor** (clave `service_role`, nunca en el navegador): `api.provisionar_perfil(p_user, p_rol, p_alias, p_entidad_codigo?, p_organizacion_id?, p_zona_comunas?, p_zona_barrios?, p_cargo_nombre?, p_simulado?)`, después de crear el usuario con la Admin API de Supabase, y `api.asegurar_organizacion(p_tipo, p_nombre, p_comuna?, p_barrio?, p_simulado?)`. Las dos son idempotentes. Para suprimir un titular: `idn.anonimizar_perfil(user_id)` por conexión directa. **Hook de Auth:** `idn.custom_access_token_hook`, que se configura en Authentication → Hooks.
+
+## Cómo la consume la app (`maqueta3d`)
+
+- `src/territoryApi.ts` arma, desde `api`, **el mismo** objeto `Territory` que antes salía de los JSON estáticos. Está probado campo por campo: `npm run test:paridad` en `db/` (PGlite) y `scripts/paridad-supabase.mjs` en `maqueta3d/` (Supabase real).
+- **Paginación:** Supabase devuelve como máximo 1.000 filas por respuesta. Se pagina con un orden **único** (`orden_fuente`; `zona_id,espacio_id`; `espacio_id,atributo`). Con un orden repetido, las páginas duplican o saltan filas: ese error ya apareció y quedó corregido.
+- **Orden:** `espacios`, `comunas` y `barrios` traen `orden_fuente`, la posición en el archivo de la IDESC, para que listas y mapa salgan en el mismo orden de siempre.
+- **Precisión:** la API serializa los decimales con 15 cifras. Las coordenadas del punto representativo difieren de los JSON en menos de 10⁻¹³ grados.
+- **Respaldo:** sin variables de entorno, o si la base no responde, la app usa los JSON y lo dice en el encabezado.
 
 ## Rendimiento medido (PGlite, con los datos reales)
 

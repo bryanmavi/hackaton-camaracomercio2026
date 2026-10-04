@@ -55,7 +55,7 @@ Debes ver "Todas las pruebas pasan" dos veces: 69 pruebas del SQL y 17 de la car
 1. William te pasa dos valores **públicos**, que están en *Project Settings → API Keys*:
    - La URL: `https://rqxltixtsiqsakxapdue.supabase.co`
    - La clave **publishable** (o `anon`). Nunca la `secret` ni la `service_role`: esa da control total y jamás va en el navegador.
-2. Crea el archivo `maqueta3d/.env.local`. Ya está en `.gitignore`, así que no se sube:
+2. Copia `maqueta3d/.env.example` como `maqueta3d/.env.local` y pon la clave pública. `.env.local` está en `.gitignore`, así que no se sube:
 ```
 VITE_SUPABASE_URL=https://rqxltixtsiqsakxapdue.supabase.co
 VITE_SUPABASE_ANON_KEY=la-clave-publishable
@@ -66,6 +66,8 @@ supabase.schema('api').from('espacios').select('*')
 supabase.schema('api').rpc('registrar_medicion', { ... })
 ```
 4. Para listas y mapas usa `api.espacios`; la ficha completa (`api.espacio_ficha`) pídela por `id`.
+5. Arranca la app con `cd maqueta3d && npm install && npm run dev`. En el encabezado debe decir **"Base de datos"**; si dice "Respaldo estático", la base no respondió, y si no dice nada, faltan las variables.
+6. La pestaña **06 Operación** aparece solo con la base configurada. Ahí se inicia sesión y, según el rol, se registran decisiones, se avanzan brechas, se completan tareas o se envían reportes comunitarios.
 
 **Cuentas de demostración (ya creadas):** hay 13, una por rol (lista en `db/docs/ROLES_Y_PERMISOS.md` §3), con correos como `sgred.demo@example.org`. Las contraseñas las tiene **solo William** y se piden por un canal seguro, nunca por el grupo. Recuerda:
 - Son cuentas **compartidas y ficticias**: no cambies su contraseña ni sus datos.

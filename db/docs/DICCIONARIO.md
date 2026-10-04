@@ -29,6 +29,8 @@ El borrador de `db/supabase/migrations/` sigue este diccionario con estos ajuste
 | Autorización | El rol y la vigencia se leen de `idn.perfiles` en cada consulta, no del JWT | Suspender o cambiar el rol surte efecto de inmediato |
 | `geo.organizaciones_comunitarias` | Nueva columna `id_fuente` (`oacid` de la JAC), única por fuente (migración 12) | Recargar el dataset sin duplicar |
 | `geo.zonas_amenaza` | `atributos` guarda de qué script se derivó la capa y, en licuación, el filtro (`sucep_licu > 0 o corrim_lat > 0`) | Se cargan las capas de la app (5 de 16 polígonos de licuación), para que los cruces sean idénticos |
+| `geo.espacios`, `geo.comunas`, `geo.barrios` | Columna `orden_fuente` (migración 14) | La app muestra listas y mapa en el orden de los archivos de la IDESC |
+| `api.mediciones_verificadas` | Vista nueva (migración 14) | Lectura ligera de lo verificado para los 2.991 espacios |
 | Auditoría | `ops.lecturas_iot` no se audita | Simulada, de alto volumen y con 30 días de retención |
 
 ## `ref`: catálogos

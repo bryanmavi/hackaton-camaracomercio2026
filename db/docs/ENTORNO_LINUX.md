@@ -143,6 +143,17 @@ unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_ANON_KEY
 ```
 Las contraseñas quedan en `~/.config/territorio-preparado/cuentas_demo_rqxltixtsiqsakxapdue.csv` (carpeta 700, archivo 600). Para cambiarlas todas: `npm run cuentas-demo -- --rotar`.
 
+### 3.11 La app conectada a la base
+```
+cd ~/hackathon-cali-2026/maqueta3d
+cp .env.example .env.local        # y pon VITE_SUPABASE_ANON_KEY (clave PÚBLICA)
+npm install
+npm run dev                       # encabezado: "Datos públicos · Cali · Base de datos"
+# Paridad contra Supabase real (clave pública)
+SUPABASE_URL=https://rqxltixtsiqsakxapdue.supabase.co SUPABASE_ANON_KEY=… node scripts/paridad-supabase.mjs
+```
+Las pruebas de navegador (`npx playwright test`) corren en modo estático, sin `.env.local`. La prueba de entregables regenera las capturas de `deliverables/renders/`; si no quieres cambiarlas, restáuralas con `git checkout -- deliverables/renders/`.
+
 ## 4. Errores que ya aparecieron y su solución
 
 | Error | Causa | Solución |
@@ -152,6 +163,7 @@ Las contraseñas quedan en `~/.config/territorio-preparado/cuentas_demo_rqxltixt
 | `SELF_SIGNED_CERT_IN_CHAIN` | El sistema no conoce la CA de Supabase | Agregar `&sslrootcert=…/db/certs/supabase-prod-ca-2021.crt`; **nunca** desactivar la verificación |
 | Advertencia de `pg`: `sslmode require … treated as verify-full` | Cambio anunciado de la librería | Usar `sslmode=verify-full` explícito |
 | `PGRST106 Invalid schema: api` | El esquema `api` no estaba expuesto | *Project Settings → Data API → Exposed schemas* = `api` |
+| Paridad con Supabase: cientos de espacios distintos | Paginación con un orden repetido (`order=zona_id`) | Ordenar por una clave única (`zona_id,espacio_id`) |
 | `password authentication failed` | Contraseña incorrecta o ya cambiada | Restablecerla en *Project Settings → Database* y repetir `supabase link` |
 | `supabase db push` pide la contraseña | El enlace guarda el proyecto, no la contraseña | Escribirla en el prompt de la CLI, o `export SUPABASE_DB_PASSWORD` solo en esa sesión |
 
