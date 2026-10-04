@@ -116,9 +116,29 @@ unset PGPASSWORD
 4b. ☐ **Cambiar la contraseña de la base**, porque quedó expuesta en el chat y en el historial de la terminal: *Project Settings → Database → Reset database password*. Después, volver a hacer `npx supabase link` en una terminal normal y borrar la línea del historial.
 5. ☐ **Invitar al equipo en Supabase:** *Organization settings → Team → Invite member*, con el rol **Developer** (guía aparte: `ACCESO_EQUIPO`).
 6. ☐ **Revisar y fusionar el PR #2.** Lo hace el responsable de la base de datos, que además responde las 10 decisiones abiertas de `MODELO_DATOS.md` §9.
-7. ☐ **Hito 5:** crear las 13 cuentas de demostración por rol, para probar la app con cada perfil.
+7. ☑ **Hito 5, cuentas de demostración:** 13 cuentas creadas y verificadas (sección 9).
+8. ☐ **Frontend:** pantallas de inicio de sesión e inscripción del factor TOTP.
 
-## 9. Decisiones tomadas en esta sesión
+## 9. Hito 5: cuentas de demostración
+
+- **Migración 13:** `api.provisionar_perfil` y `api.asegurar_organizacion`. Solo las puede ejecutar `service_role`, y son idempotentes. Se aplicó con `supabase db push`.
+- **Script `db/scripts/crear_usuarios_demo.mjs`** (`npm run cuentas-demo`): crea las cuentas con la Admin API de Supabase (correos `@example.org`, contraseñas aleatorias de 24 caracteres) y sus perfiles con cargo y organización. Después inicia sesión con cada una para verificarla.
+- **Las contraseñas no están en el repo ni se imprimen:** quedan en `~/.config/territorio-preparado/cuentas_demo_rqxltixtsiqsakxapdue.csv`, con permisos 600, en el equipo de William. Las claves de servicio se pasaron de la CLI al script sin mostrarse.
+- **Organizaciones ficticias** para las cuentas comunitarias, en las comunas 06 y 05 y el barrio 0610: no se usan juntas reales.
+
+| Verificación en Supabase real | Resultado |
+|---|---|
+| Las 13 cuentas inician sesión y `api.mi_perfil` devuelve su rol | 13 de 13 |
+| Claim `user_role` en el token (hook activo) | 13 de 13 |
+| `gestion_riesgo` sin MFA intenta decidir | Bloqueado: "exige verificación en dos pasos (aal2)" |
+| UAESP intenta decidir | Bloqueado |
+| JAC A (comuna 06) declara en un espacio de la comuna 05 | Bloqueado: "fuera de tu zona" |
+| Reporte cuyos grupos de edad no suman el total | Rechazado |
+| `consulta` lee brechas y auditoría | 0 filas; sí ve el resumen territorial (22 comunas) |
+| `superusuario` ve las cuentas; gestiona usuarios sin MFA | Ve 13; la gestión queda bloqueada |
+| Auditor verifica la cadena de auditoría | Correcta (68 eventos) |
+
+## 10. Decisiones tomadas en esta sesión
 
 - **Las pruebas corren en PGlite**, sin Docker ni Supabase local: cualquier integrante las corre con `npm test`.
 - **Los catálogos van en migraciones**, no en `seed.sql`, porque el proyecto se arma solo con migraciones (ADR-0009).

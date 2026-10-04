@@ -67,7 +67,9 @@ supabase.schema('api').rpc('registrar_medicion', { ... })
 ```
 4. Para listas y mapas usa `api.espacios`; la ficha completa (`api.espacio_ficha`) pídela por `id`.
 
-**Todavía no hay cuentas para iniciar sesión en la app** (gestión del riesgo, entidad, junta, auditor…). Se crean en el Hito 5. Mientras tanto, sin iniciar sesión solo se leen los datos abiertos.
+**Cuentas de demostración (ya creadas):** hay 13, una por rol (lista en `db/docs/ROLES_Y_PERMISOS.md` §3), con correos como `sgred.demo@example.org`. Las contraseñas las tiene **solo William** y se piden por un canal seguro, nunca por el grupo. Recuerda:
+- Son cuentas **compartidas y ficticias**: no cambies su contraseña ni sus datos.
+- `sgred`, `coordinacion` y `plataforma` necesitan inscribir un factor TOTP (por ejemplo, Google Authenticator) para decidir activaciones o gestionar usuarios; sin eso, la base lo bloquea. La pantalla de inscripción todavía no existe en la app.
 
 ## 5. Proponer un cambio a la base de datos
 

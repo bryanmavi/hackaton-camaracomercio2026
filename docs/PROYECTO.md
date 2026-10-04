@@ -3,7 +3,7 @@
 **Equipo:** William Ortiz, Herlin Echeverry, Pablo Arango, Bryan Martínez Villamarín
 **Reto:** RETO-01 Cali Activa: espacios públicos que se transforman para cuidar
 **Enfoque:** plan de contingencia multiamenaza (sismo, inundación y sequía/El Niño) para espacios públicos, con organismos y mecanismos para el antes, el durante y el después.
-**Última actualización:** 4 de octubre de 2026: base de datos montada en Supabase `dev` (12 migraciones, API restringida al esquema `api`), repo privado y equipo invitado.
+**Última actualización:** 4 de octubre de 2026: 13 cuentas de demostración por rol creadas y verificadas en Supabase `dev` (Hito 5).
 
 ---
 
@@ -550,13 +550,22 @@ Validación (`cd db && npm test`): 69 pruebas del SQL y 17 de carga, entre ellas
 - **Datos reales en Supabase:** 2.991 espacios, 660 zonas, 22 comunas, 342 barrios y 182 JAC, con los mismos cruces de amenaza que la app (0 diferencias). Región del proyecto: EE. UU. este (`us-east-1`).
 - **Documentos:** `db/docs/INFORME_MONTAJE_SUPABASE.pdf` (qué se hizo, con el detalle) y `db/docs/ACCESO_EQUIPO.pdf` (paso a paso para cada integrante).
 
+## 6.29 Cuentas de demostración por rol (4 de octubre)
+
+Se crearon en Supabase `dev` las **13 cuentas de demostración** (`db/scripts/crear_usuarios_demo.mjs`): plataforma, 2 de gestión del riesgo, 4 de entidades responsables (UAESP, EMCALI, Salud Pública, Bienestar Social), DATIC, 3 comunitarias, auditoría y jurado. Usan correos `@example.org`, alias institucionales y organizaciones comunitarias **ficticias**; ninguna es una persona ni una junta real. Las contraseñas están solo en el equipo del responsable de la BD (William).
+
+Prueba de punta a punta en Supabase real: las 13 cuentas inician sesión con su rol y el token trae el claim del hook. La base bloquea a `gestion_riesgo` sin MFA, a una entidad que intenta decidir, a una junta fuera de su zona y a un reporte cuyos grupos de edad no suman, y no deja a `consulta` ver brechas ni auditoría. La cadena de auditoría verifica bien (68 eventos). Falta en la app la pantalla de inicio de sesión y la de inscripción del factor TOTP.
+
 ## 7. Pendientes
 - [ ] **Base de datos:** el responsable de la BD revisa el SQL del Hito 1 y responde las 10 decisiones de `db/docs/MODELO_DATOS.md` §9 (el borrador asume el valor propuesto en cada una).
 - [x] **Base de datos (H2):** script de carga de los datos reales con verificación de `sha256` (sección 6.27).
 - [ ] Revisar las 3 huellas y las 18 zonas de amenaza con geometría no válida (¿reportarlas a la IDESC?), y las 23 JAC cuyo código de barrio no está en la capa de barrios.
 - [x] **Base de datos (H3):** migraciones aplicadas en Supabase `dev` y `api` como único esquema expuesto (sección 6.28).
 - [x] Supabase `dev`: datos reales cargados y verificados (2.991 espacios; cruces idénticos a la app; TLS verificado con la CA de Supabase).
-- [ ] Supabase `dev`: activar el MFA TOTP y el hook del token, y **cambiar la contraseña de la base** (quedó expuesta en el chat).
+- [x] Hook del token activo (verificado: el token trae `user_role`).
+- [x] **Hito 5:** 13 cuentas de demostración creadas y verificadas (sección 6.29).
+- [ ] Supabase `dev`: activar el MFA TOTP y **cambiar la contraseña de la base** (quedó expuesta en el chat).
+- [ ] App: pantalla de inicio de sesión e inscripción del factor TOTP; conectar la lectura de datos a `api`.
 - [ ] Cada integrante acepta la invitación, cierra su copia pública y sigue `db/docs/ACCESO_EQUIPO.pdf`. William los invita a la organización de Supabase con el rol Developer.
 - [x] Sustituir la descarga técnica principal por un informe de preparación legible, con todas las necesidades y opción de guardar como PDF.
 - [x] Integrar el fork de Herlin del 26 de septiembre (El kit y Word vigente) y publicar en GitHub Pages.

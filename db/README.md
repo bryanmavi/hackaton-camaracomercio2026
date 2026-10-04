@@ -11,7 +11,7 @@ Raíz de la base de datos del proyecto (RETO-01 Cali Activa) para montarla en **
 | H2 | Carga de datos reales (espacios, comunas, barrios, amenazas, JAC) | **Lista y probada** (`scripts/cargar_datos_reales.mjs`): falta correrla en Supabase |
 | H3 | Pruebas en Supabase real, CI y anclaje externo del hash | Pendiente (la RLS, la auditoría y las pruebas ya existen en borrador) |
 | H4 | Cumplimiento (Colombia e ISO 27000) | En curso (`docs/cumplimiento/`) |
-| H5 | Usuarios de demostración y guía de montaje | Pendiente |
+| H5 | Usuarios de demostración y guía de montaje | **Hecho en `dev`**: 13 cuentas verificadas (`npm run cuentas-demo`) |
 
 ## Cómo probar el SQL (sin Supabase ni Docker)
 
@@ -46,6 +46,8 @@ Se carga tal como viene, sin inventar: 52 espacios sin comuna, 23 JAC cuyo códi
 | `…09` y `…10` | Vistas y funciones del esquema `api` (contrato en [`docs/CONTRATO_API.md`](docs/CONTRATO_API.md)) |
 | `…11` | Privilegios mínimos explícitos |
 | `…12` | `id_fuente` de las organizaciones (para recargar las JAC sin duplicar) |
+| `…13` | `api.provisionar_perfil` y `api.asegurar_organizacion`, solo para `service_role` |
+| `scripts/crear_usuarios_demo.mjs` | Las 13 cuentas de demostración (Hito 5) |
 | `scripts/cargar_datos_reales.mjs` | Carga del Hito 2 |
 | `tests/` | Shim, ejecutor, 69 pruebas de SQL y 17 de carga |
 

@@ -3,9 +3,9 @@
 
 create schema pruebas;
 create table pruebas.resultados (n serial, prueba text, ok boolean);
-grant usage on schema pruebas to anon, authenticated;
-grant insert, select on pruebas.resultados to anon, authenticated;
-grant usage on sequence pruebas.resultados_n_seq to anon, authenticated;
+grant usage on schema pruebas to anon, authenticated, service_role;
+grant insert, select on pruebas.resultados to anon, authenticated, service_role;
+grant usage on sequence pruebas.resultados_n_seq to anon, authenticated, service_role;
 
 -- Ejecuta SQL como el rol actual y devuelve el SQLSTATE del error (NULL si no falla).
 create function pruebas.error_de(p_sql text) returns text language plpgsql as $$
@@ -15,12 +15,12 @@ begin
 exception when others then
   return sqlstate;
 end $$;
-grant execute on function pruebas.error_de(text) to anon, authenticated;
+grant execute on function pruebas.error_de(text) to anon, authenticated, service_role;
 
 create function pruebas.anotar(p_prueba text, p_ok boolean) returns void language sql as $$
   insert into pruebas.resultados (prueba, ok) values (p_prueba, coalesce(p_ok, false));
 $$;
-grant execute on function pruebas.anotar(text, boolean) to anon, authenticated;
+grant execute on function pruebas.anotar(text, boolean) to anon, authenticated, service_role;
 
 -- Cambia de usuario simulando el JWT de Supabase
 create function pruebas.como(p_sub text, p_aal text default 'aal1') returns void language sql as $$
@@ -262,5 +262,35 @@ alter table aud.eventos disable trigger eventos_inmutable;
 update aud.eventos set cambios = cambios || '{"estado":"falsificado"}' where id = 5;
 alter table aud.eventos enable trigger eventos_inmutable;
 select pruebas.anotar('la verificación detecta la fila manipulada', (select not ok and primera_invalida = 5 from aud.verificar_cadena()));
+
+-- ───────────── Provisión desde el servidor (migración 13) ─────────────
+set role authenticated;
+select pruebas.como('00000000-0000-0000-0000-000000000001', 'aal2');
+select pruebas.anotar('ni el superusuario provisiona por la API (solo service_role)',
+  pruebas.error_de($q$select api.provisionar_perfil('00000000-0000-0000-0000-0000000000aa','auditor','x')$q$) = '42501');
+reset role;
+set role anon;
+select pruebas.anotar('anon no crea organizaciones',
+  pruebas.error_de($q$select api.asegurar_organizacion('jac','X')$q$) = '42501');
+reset role;
+set role service_role;
+select pruebas.anotar('service_role crea una organización ficticia',
+  api.asegurar_organizacion('jac', 'JAC demo C (simulada)', '01', null, true) is not null);
+select pruebas.anotar('asegurar_organizacion es idempotente',
+  api.asegurar_organizacion('jac', 'JAC demo C (simulada)', '01', null, true)
+  = api.asegurar_organizacion('jac', 'JAC demo C (simulada)', '01', null, true));
+select pruebas.anotar('service_role provisiona un perfil con cargo nuevo',
+  api.provisionar_perfil('00000000-0000-0000-0000-0000000000aa', 'entidad_responsable', 'Salud Pública (demo)',
+    'SALUD_PUBLICA', p_cargo_nombre => 'Enlace de Salud Pública (demo)', p_simulado => true) = 'creado');
+select pruebas.anotar('provisionar de nuevo no duplica',
+  api.provisionar_perfil('00000000-0000-0000-0000-0000000000aa', 'entidad_responsable', 'Salud Pública (demo)',
+    'SALUD_PUBLICA', p_cargo_nombre => 'Enlace de Salud Pública (demo)', p_simulado => true) = 'existente');
+reset role;
+select pruebas.anotar('el perfil quedó con su cargo y asignación vigente',
+  exists (select 1 from idn.perfiles p join idn.cargos c on c.id = p.cargo_id
+          join idn.asignaciones_cargo a on a.cargo_id = c.id and a.user_id = p.user_id and a.hasta is null
+          where p.user_id = '00000000-0000-0000-0000-0000000000aa' and p.es_simulado));
+select pruebas.anotar('entidad inexistente se rechaza',
+  pruebas.error_de($q$select api.provisionar_perfil('00000000-0000-0000-0000-0000000000bb','entidad_responsable','x','NO_EXISTE')$q$) = '23503');
 
 select prueba, ok from pruebas.resultados order by n;

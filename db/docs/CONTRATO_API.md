@@ -46,7 +46,7 @@ Todas verifican permiso, alcance y, cuando aplica, MFA. Errores: `42501` sin per
 | `cambiar_rol`, `suspender_usuario`, `traspasar_cargo` | `usuarios.gestionar` + **aal2** | Nadie se cambia ni se suspende a sí mismo. El traspaso deja al saliente en `consulta` |
 | `verificar_auditoria()` | `auditoria.leer` | Recorre la cadena de hash |
 
-**Solo servidor** (clave `service_role`, nunca en el navegador): `idn.provisionar_perfil(...)` después de crear el usuario con la Admin API de Supabase, e `idn.anonimizar_perfil(user_id)` antes de borrarlo. **Hook de Auth:** `idn.custom_access_token_hook`, que se configura en Authentication → Hooks.
+**Solo servidor** (clave `service_role`, nunca en el navegador): `api.provisionar_perfil(p_user, p_rol, p_alias, p_entidad_codigo?, p_organizacion_id?, p_zona_comunas?, p_zona_barrios?, p_cargo_nombre?, p_simulado?)`, después de crear el usuario con la Admin API de Supabase, y `api.asegurar_organizacion(p_tipo, p_nombre, p_comuna?, p_barrio?, p_simulado?)`. Las dos son idempotentes. Para suprimir un titular: `idn.anonimizar_perfil(user_id)` por conexión directa. **Hook de Auth:** `idn.custom_access_token_hook`, que se configura en Authentication → Hooks.
 
 ## Rendimiento medido (PGlite, con los datos reales)
 
@@ -56,4 +56,4 @@ Una ficha tarda 2 ms; `espacios` (2.991 filas), 36 ms; `zonas_amenaza` con GeoJS
 
 1. Correr la carga de datos reales en el proyecto de Supabase (`npm run cargar`; el script ya está probado, ver `db/README.md`).
 2. Cambiar en la app la lectura de JSON estáticos por estas vistas, conservando los JSON como respaldo público.
-3. Crear las 13 cuentas de demostración (H5).
+3. ~~Crear las 13 cuentas de demostración (H5)~~: hecho. Falta la pantalla de inicio de sesión y la de inscripción del factor TOTP (`supabase.auth.mfa.enroll`, `challenge` y `verify`) para `gestion_riesgo` y `superusuario`.

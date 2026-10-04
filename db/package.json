@@ -7,7 +7,8 @@
     "test": "node tests/ejecutar.mjs && node tests/carga.mjs",
     "test:sql": "node tests/ejecutar.mjs",
     "test:carga": "node tests/carga.mjs",
-    "cargar": "node scripts/cargar_datos_reales.mjs"
+    "cargar": "node scripts/cargar_datos_reales.mjs",
+    "cuentas-demo": "node scripts/crear_usuarios_demo.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",

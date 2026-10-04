@@ -49,6 +49,7 @@ gh auth login
 | `db/scripts/cargar_datos_reales.mjs` | Carga de los datos reales | Sí |
 | Token de la CLI de Supabase | Lo guarda `supabase login` en el **llavero del sistema** (GNOME Keyring), no en un archivo | **No** |
 | Contraseña de la base de datos | Solo en el gestor de contraseñas de William | **No** |
+| `~/.config/territorio-preparado/` | Contraseñas de las 13 cuentas de demostración (permisos 600) | **No** |
 | `maqueta3d/.env.local` | URL y clave pública de Supabase para el frontend (cada integrante crea la suya) | **No** (ignorado) |
 
 ## 3. Registro de lo hecho, en orden
@@ -130,6 +131,18 @@ soffice --headless --convert-to pdf:writer_web_pdf_Export --outdir . /tmp/ACCESO
 ```
 Igual para `INFORME_MONTAJE_SUPABASE.md`, este documento y la bitácora (`docs/PROYECTO.md`).
 
+### 3.10 Cuentas de demostración (Hito 5)
+```
+cd ~/hackathon-cali-2026/db
+npx supabase db push                     # migración 13 (provisión por servidor)
+export SUPABASE_URL=https://rqxltixtsiqsakxapdue.supabase.co
+read -rs SUPABASE_SERVICE_ROLE_KEY && export SUPABASE_SERVICE_ROLE_KEY   # Project Settings → API Keys (legacy service_role)
+read -rs SUPABASE_ANON_KEY && export SUPABASE_ANON_KEY                   # legacy anon
+npm run cuentas-demo                     # crea lo que falte y verifica las 13 cuentas
+unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_ANON_KEY
+```
+Las contraseñas quedan en `~/.config/territorio-preparado/cuentas_demo_rqxltixtsiqsakxapdue.csv` (carpeta 700, archivo 600). Para cambiarlas todas: `npm run cuentas-demo -- --rotar`.
+
 ## 4. Errores que ya aparecieron y su solución
 
 | Error | Causa | Solución |
@@ -165,3 +178,4 @@ history -d NUMERO && history -w
 | Aplicar migraciones (solo el responsable) | `npx supabase db push` |
 | Comparar lo local con el remoto | `npx supabase migration list` |
 | Recargar los datos reales | Sección 3.8 (es idempotente) |
+| Crear o verificar las cuentas de demostración | Sección 3.10 (`npm run cuentas-demo`) |

@@ -43,7 +43,9 @@
 
 ## 3. Cuentas de demostración (13, ficticias)
 
-Todas con `es_simulado = true`, correo `@example.org`, alias institucional (no nombre de persona). Las contraseñas se generan al montar con `db/scripts/crear_usuarios_demo.mjs` (clave de servicio en variable de entorno local, nunca en el repo). MFA TOTP para `superusuario` y `gestion_riesgo`.
+**Creadas el 4 de octubre de 2026 en Supabase `dev`** con `db/scripts/crear_usuarios_demo.mjs` (`npm run cuentas-demo`). Todas tienen `es_simulado = true`, correo `@example.org` (dominio reservado, nadie lo recibe) y alias institucional, no nombre de persona. Las contraseñas son aleatorias y quedan **solo** en el equipo del responsable de la BD: `~/.config/territorio-preparado/cuentas_demo_<ref>.csv`, con permisos 600. `superusuario` y `gestion_riesgo` deben inscribir un factor TOTP para decidir o gestionar usuarios.
+
+Las cuentas comunitarias pertenecen a organizaciones **ficticias** (`JAC demo A (simulada)` en la comuna 06, `JAC demo B (simulada)` en la comuna 05 y `Conjunto residencial demo (simulado)` en el barrio 0610 Ciudadela Floralia). No se asocian a juntas reales del dataset, para no dar a entender que una junta real usa el sistema.
 
 | # | Alias visible | Rol | Entidad / organización | Zona |
 |---|---|---|---|---|
@@ -55,13 +57,13 @@ Todas con `es_simulado = true`, correo `@example.org`, alias institucional (no n
 | 6 | Salud Pública (demo) | `entidad_responsable` | Secretaría de Salud Pública | Toda |
 | 7 | Bienestar Social (demo) | `entidad_responsable` | Secretaría de Bienestar Social | Toda |
 | 8 | DATIC soporte técnico (demo) | `datic_tecnico` | DATIC | |
-| 9 | Junta de acción comunal A (demo) | `comunitario` | JAC del dataset | Su comuna y barrio |
-| 10 | Junta de acción comunal B (demo) | `comunitario` | JAC del dataset | Su comuna y barrio |
-| 11 | Administración de conjunto residencial (demo) | `comunitario` | Propiedad horizontal (demo) | Su barrio |
+| 9 | Junta de acción comunal A (demo) | `comunitario` | JAC demo A (simulada) | Comuna 06 |
+| 10 | Junta de acción comunal B (demo) | `comunitario` | JAC demo B (simulada) | Comuna 05 |
+| 11 | Administración de conjunto residencial (demo) | `comunitario` | Conjunto residencial demo (simulado) | Barrio 0610 |
 | 12 | Control y auditoría (demo) | `auditor` | | |
 | 13 | Jurado y aliados (demo) | `consulta` | | |
 
-Si prefieres otra distribución (por ejemplo más entidades o una cuenta por cada integrante del equipo para probar), se ajusta antes de escribir el script.
+Correos: `plataforma`, `sgred`, `coordinacion`, `uaesp`, `emcali`, `salud`, `bienestar`, `datic`, `jac-a`, `jac-b`, `conjunto`, `auditoria` y `jurado`, cada uno seguido de `.demo@example.org`.
 
 ## 4. Operaciones de cuentas (solo `superusuario`, con `aal2`, todas auditadas)
 
