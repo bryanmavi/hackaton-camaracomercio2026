@@ -1,0 +1,197 @@
+# Diccionario de datos (Hito 1, para revisión)
+
+> Convenciones: `PK` llave primaria, `FK` llave foránea, `NULL` = desconocido (nunca cero). Clases de dato: **Público** (datos abiertos o catálogos), **Interno** (operativo no personal), **Restringido** (cuentas, auditoría, reportes comunitarios) y **Crítico** (claves y secretos: nunca en el repo ni en la BD de aplicación).
+> Los tipos son orientativos; el Hito 2 los fija en SQL. El fundamento legal de cada tabla se cierra en el Hito 4 contra el texto primario (ver `docs/cumplimiento/FUENTES.md`).
+
+## `ref`: catálogos
+
+### `ref.fuentes` · Público
+Una fila por conjunto de datos abiertos. Reproduce `maqueta3d/public/data/manifest.json`.
+| Columna | Tipo | Nulo | Descripción |
+|---|---|---|---|
+| clave | text PK | no | `publicSpaces`, `sports`, `communes`, `neighborhoods`, `fluvial`, `pluvial`, `nonMitigable`, `liquefaction`, `seismicEffects`, `jac`... |
+| nombre | text | no | Nombre del conjunto de datos |
+| entidad | text | no | Entidad publicadora (DAPM/IDESC, Secretaría del Deporte...) |
+| pagina_fuente | text | no | URL de la página de origen |
+| url_descarga | text | sí | URL de descarga (WFS u otra) |
+| licencia | text | no | `CC BY` o `CC BY-SA` |
+| compartir_igual | boolean | no | `true` si la licencia exige compartir igual |
+| atribucion | text | no | Texto de atribución obligatorio |
+| fecha_corte | date | no | Fecha del snapshot (hoy 2026-09-25) |
+| sha256 | char(64) | sí | Huella del archivo archivado |
+| n_registros | integer | sí | Conteo esperado (para validar la carga) |
+| es_simulado | boolean | no | Siempre `false` en fuentes reales |
+
+### `ref.entidades` · Público
+| Columna | Tipo | Nulo | Descripción |
+|---|---|---|---|
+| id | bigint PK | no | Identidad |
+| codigo | text único | no | `SGRED`, `DATIC`, `EMCALI`, `UAESP`... |
+| nombre | text | no | Nombre oficial |
+| nivel | text | no | `municipal`, `departamental`, `nacional`, `operativo`, `comunitario`, `privado` |
+| padre_id | bigint FK | sí | Dependencia superior |
+| vigente_desde / vigente_hasta | date | sí / sí | Las secretarías se reorganizan: se cierra la vigencia, no se borra |
+| sucesora_id | bigint FK | sí | Entidad que la reemplaza |
+| competencia_resumen | text | no | Qué le toca en una emergencia |
+| norma_competencia | text | sí | Norma que lo respalda (se completa en H4) |
+| estado_validacion | text | no | `propuesta` o `validada` |
+
+### `ref.amenazas` · Público
+`codigo` PK (`flood`, `earthquake`, `drought`, `wildfire`, `building-fire`), `nombre_es`, `activa_en_motor` (false para `drought`: sin datos suficientes), `nota`.
+
+### `ref.servicios` · Público
+`codigo` PK (`toilets`, `water`, `shelter`, `wildfire-perimeter`, `wildfire-access`, `wildfire-vegetation`, `wildfire-smoke`, `building-fire-access`, `building-fire-building`, `building-fire-inspection`...), `nombre_es`, `tipo` (`cuantitativo` o `tarea_evidencia`), `unidad` (`baños`, `L/día`, `m²`, nulo en tareas), `amenaza_codigo` FK (nulo en servicios generales), `parametro_clave` (a `ref.parametros_reglas`), `regla_texto`.
+
+### `ref.responsabilidades` · Público
+PK compuesta (`servicio_codigo`, `entidad_id`, `contexto`). `papel` (`lidera`, `apoya`, `valida`), `bloquea_activacion` (boolean), `contexto` (`albergue`, `punto_salud`...), `estado_validacion` (`propuesta` hasta que la Secretaría la valide), `fuente`. Semilla inicial: la matriz "propuesta sin validar" de `docs/propuesta_cali_activa.md` (baños: UAESP; agua y energía: EMCALI; superficie cubierta: Gestión del Riesgo).
+
+### `ref.parametros_reglas` · Público
+PK (`clave`, `version`). `valor` numeric, `unidad`, `fuente_url`, `vigente` boolean, `vigente_desde`. Semilla: `personas_por_bano = 20`, `litros_persona_dia = 15`, `m2_cubiertos_persona = 3.5` (Esfera 2018), `personas_maximas_escenario = 100000`, `umbral_supresion = 5` (propuesta).
+
+### `ref.protocolo_plantillas` y `ref.protocolo_pasos` · Interno
+Plantilla: `id`, `nombre`, `amenaza_codigo` (nulo = todas), `version`, `estado_validacion`. Paso: `plantilla_id`, `orden`, `titulo`, `descripcion`, `entidad_id` (responsable), `servicio_codigo` (nulo si no es de un servicio), `plazo_ref_horas`, `bloquea_activacion`. Al registrar una decisión se instancian en `ops.tareas_protocolo`. Marcado `propuesta` hasta validación institucional.
+
+## `geo`: territorio
+
+### `geo.comunas` (22) y `geo.barrios` (342) · Público
+`codigo` PK (`'01'`; barrios `'0101'`), `nombre`, `comuna_codigo` FK (en barrios), `geom` MultiPolygon 4326, `fuente_clave` FK.
+
+### `geo.espacios` (2.991) · Público
+| Columna | Tipo | Nulo | Descripción |
+|---|---|---|---|
+| id | text PK | no | `epou-8413` o `deporte-984` (idéntico al de la app) |
+| fuente_clave | text FK | no | `publicSpaces` (1.970) o `sports` (1.021) |
+| nombre | text | no | `Parque · Vipasa · EPE_02` |
+| tipo | text | no | `Parque`, `Escenario deportivo`, `Zona verde`, `Plazoleta`, `Plaza` |
+| condicion | text | sí | `Adecuado`... (campo `condition` de la fuente) |
+| comuna_codigo | text FK | sí | Hay 52 registros sin comuna asignada (no se inventan) |
+| barrio_nombre | text | sí | Como viene en la fuente |
+| comuna_fuente / barrio_fuente | text | sí | Valores originales |
+| limite_ambiguo | boolean | no | `boundaryAmbiguous` |
+| punto | geometry(Point,4326) | no | `coordinates` |
+| huella | geometry(MultiPolygon,4326) | sí | Solo en EPOU (en deportivos es nulo) |
+| area_m2 | numeric | sí | Huella cartográfica, **no** superficie útil ni aforo |
+| metodo_evaluacion | text | no | `Intersección con toda la huella...` o `Cruce en el punto...` |
+| es_simulado | boolean | no | `false` |
+Los dos tipos de fuente pueden describir el mismo predio: no sumar aforos ni superficies entre fuentes.
+
+### `geo.zonas_amenaza` · Público
+`id` bigint PK, `fuente_clave` FK, `amenaza_tipo` (`inundacion_fluvial`, `inundacion_pluvial`, `no_mitigable`, `licuacion`, `efectos_sismicos`), `etiqueta` (campo `label`), `atributos` jsonb, `geom` MultiPolygon 4326. Línea base de H2: las capas derivadas que usa la app (`flood.json` con 653 y `seismic.json` con 7); las capas crudas de `prototipo/datos/raw/idesc/` son opcionales.
+
+### `geo.espacio_exposicion` · vista, Público
+Cruces `ST_Intersects` entre `geo.espacios` y `geo.zonas_amenaza`, con el mismo método que `assessmentMethod`. Reemplaza los pre-cálculos del CSV. "Sin cruce" no significa "sin amenaza".
+
+### `geo.mediciones_espacio` · Interno
+Historia verificable de lo que hoy es `null` en la app.
+| Columna | Tipo | Nulo | Descripción |
+|---|---|---|---|
+| id | bigint PK | no | |
+| espacio_id | text FK | no | |
+| atributo | text | no | `capacidad_personas`, `banos`, `agua_l_dia`, `evaluacion_estructural_vigente`, `accesibilidad`, `energia_respaldo`, `disponibilidad`, `administracion_acceso`, `horario` |
+| valor_num / valor_texto / valor_fecha | numeric / text / date | sí | Solo uno según el atributo. `valor_texto` pasa por el filtro de datos personales |
+| unidad | text | sí | |
+| estado | text | no | `declarado`, `verificado`, `rechazado` |
+| fuente_texto | text | no | Quién o qué lo respalda (cargo o documento, nunca un nombre de persona) |
+| evidencia_ref | text | sí | Referencia a un acta o documento. Obligatoria si `verificado` |
+| reportado_por / reportado_en | uuid FK / timestamptz | no | Perfil y fecha |
+| validado_por / validado_en | uuid FK / timestamptz | sí | Obligatorios si `verificado` |
+Para `evaluacion_estructural_vigente` solo se guarda sí/no y la fecha; **no hay columna para un concepto**.
+
+### `geo.organizaciones_comunitarias` · Público
+`id` PK, `tipo` (`jac`, `propiedad_horizontal`, `comite_barrial`, `albergue_autogestionado`, `otra`), `nombre`, `comuna_codigo`, `barrio_codigo` (nulo), `direccion_publica` (nulo; la de la JAC viene del dataset abierto), `fuente_clave` (nulo en las creadas por registro), `activa`, `es_simulado`. Semilla: 182 JAC de `prototipo/datos/raw/idesc/pfp_ivc_organismos_accion_comunal.geojson`. Son organizaciones, **no** personas.
+
+## `idn`: identidad (único dato personal del sistema)
+
+### `idn.perfiles` · Restringido
+| Columna | Tipo | Nulo | Descripción |
+|---|---|---|---|
+| user_id | uuid PK | no | FK a `auth.users` (el correo vive en Auth) |
+| rol | rol_app | no | `superusuario`, `gestion_riesgo`, `entidad_responsable`, `datic_tecnico`, `comunitario`, `auditor`, `consulta` |
+| cargo_id | bigint FK | sí | Cargo que ocupa hoy |
+| entidad_id / organizacion_id | bigint FK | sí | A cuál pertenece |
+| zona_comunas / zona_barrios | text[] | no | Alcance territorial (vacío = sin restricción por zona) |
+| alias_visible | text | no | Cargo o alias institucional. **No** el nombre de la persona |
+| activo | boolean | no | |
+| mfa_requerido | boolean | no | `true` para `superusuario` y `gestion_riesgo` |
+| es_simulado | boolean | no | `true` en los usuarios de demostración |
+| creado_por / creado_en / desactivado_en | uuid / timestamptz | | |
+Sin teléfono, documento ni dirección.
+
+### `idn.cargos` · Interno
+`id`, `entidad_id` o `organizacion_id`, `nombre` (`Secretario(a) de Gestión del Riesgo`), `rol_por_defecto`, `activo`.
+
+### `idn.asignaciones_cargo` · Restringido
+`cargo_id`, `user_id`, `desde`, `hasta` (nulo = vigente), `motivo`, `registrado_por`. Una asignación vigente por cargo.
+
+### `idn.rol_permisos` · Interno
+PK (`rol`, `permiso`). La matriz de `ROLES_Y_PERMISOS.md` como datos, para que sea auditable y testeable.
+
+### `idn.autorizaciones_tratamiento` · Restringido
+`user_id`, `version_politica`, `aceptada_en`. Sin IP ni otros metadatos.
+
+## `ops`: operación
+
+### `ops.recomendaciones` · Interno · inmutable
+`id` uuid, `creada_en`, `creada_por` (perfil), `amenaza_codigo` FK, `personas_escenario` (1 a 100.000), `origen_espacio_id` FK, `ambito` (texto del sector comparado), `version_reglas`, `candidatos` jsonb (id, distancia en m, razón), `resumen_cribado` jsonb (considerados, excluidos por cruce, pendientes de evidencia), `advertencias` text[], `es_simulado` (por defecto `true`). Se rellena con la salida de `compareCandidates()`. No admite UPDATE.
+
+### `ops.decisiones_activacion` · Interno
+`id` uuid, `recomendacion_id` FK (nulo), `espacio_id` FK, `amenaza_codigo` FK, `funcion` (`albergue`, `acopio`, `punto_agua`, `punto_salud`, `punto_informacion`, `amortiguacion`), `acto_tipo` (`decreto`, `resolucion`, `acta_cmgrd`, `instruccion_secretaria`), `acto_numero`, `acto_fecha`, `justificacion` (obligatoria si no hay recomendación o el espacio difiere), `decidida_por` (perfil), `cargo_id`, `estado` (`vigente`, `en_desactivacion`, `cerrada`), `personas_estimadas` (nulo), `es_simulado`. Solo `api.registrar_decision_activacion` inserta.
+
+### `ops.brechas` · Interno
+`id` uuid, `decision_id` FK, `espacio_id` FK, `servicio_codigo` FK, `requerido` numeric, `unidad`, `existente` numeric (nulo = sin dato), `faltante` numeric **generada** (nulo si `existente` es nulo), `entidad_responsable_id` FK, `estado` (`por_medir`, `en_revision`, `asignada`, `en_ejecucion`, `cerrada`), `regla_texto`, `version_reglas`, `es_simulado`. Único (`decision_id`, `servicio_codigo`).
+
+### `ops.seguimientos` · Interno
+`id`, `brecha_id` FK, `estado_anterior`, `estado_nuevo`, `nota` (≤ 280, filtro de datos personales), `registrado_por`, `registrado_en`.
+
+### `ops.tareas_protocolo` · Interno
+`id`, `decision_id` FK, `paso_id` FK, `entidad_id` FK, `estado` (`pendiente`, `en_curso`, `completada`, `no_aplica`), `vence_en`, `completada_por`, `completada_en`, `nota` (filtrada).
+
+### `ops.reportes_comunitarios` · Restringido
+| Columna | Tipo | Nulo | Descripción |
+|---|---|---|---|
+| id | uuid PK | no | |
+| organizacion_id | bigint FK | no | JAC o conjunto que reporta |
+| espacio_id | text FK | sí | Espacio al que se refiere |
+| tipo | text | no | `estado_espacio`, `necesidad`, `alerta_barrial` |
+| n_total, n_0_5, n_6_17, n_18_59, n_60_mas | integer ≥ 0 | sí | Conteos agregados; la suma de los grupos debe igualar el total |
+| n_discapacidad | integer ≥ 0 | sí | Opcional, sensible, solo agregado |
+| estado_servicios | jsonb | sí | Por servicio: `ok`, `falla`, `sin_dato` (claves de `ref.servicios`) |
+| observacion | text ≤ 280 | sí | Con filtro de datos personales. Pendiente de tu decisión (§9.5) |
+| creado_por / creado_en | uuid / timestamptz | no | |
+| es_simulado | boolean | no | |
+Las vistas públicas suprimen celdas menores al umbral N.
+
+### `ops.retornos` · Interno
+`id`, `decision_id` FK único, `checklist` jsonb, `acta_ref`, `fecha_retorno`, `estado`, `cargos_firmantes` bigint[], `es_simulado`.
+
+### `ops.lecturas_iot` · Interno · solo simuladas
+`id`, `espacio_id`, `sensor` (`nivel_tanque`, `temperatura`, `humedad`, `conteo_agregado`), `valor`, `unidad`, `medido_en`, `es_simulado` con `CHECK (es_simulado)`. Sin cámaras ni identificadores de dispositivos de personas.
+
+### `ops.notificaciones` · Interno · solo simuladas
+`id`, `decision_id` (nulo), `destinatario_tipo` (`entidad`, `organizacion`, `publico`), `mensaje`, `estado` con `CHECK (estado = 'borrador')`, `es_simulado` con `CHECK (es_simulado)`. Sin teléfonos ni correos de destinatarios.
+
+## `aud`: auditoría
+
+### `aud.eventos` · Restringido
+`id` bigint, `ocurrido_en`, `actor_uuid` (nulo si es el sistema), `actor_rol`, `tabla`, `operacion`, `fila_id`, `cambios` jsonb (solo columnas no sensibles), `hash_previo` bytea, `hash` bytea = sha256(`hash_previo` + contenido). Sin nombres ni correos. `aud.verificaciones` guarda cada corrida de `verificar_cadena()`.
+
+## `api`: única superficie expuesta
+
+Vistas (todas con `security_invoker`): `espacios`, `espacio_ficha`, `espacio_exposicion`, `comunas`, `barrios`, `zonas_amenaza`, `fuentes`, `entidades`, `responsabilidades`, `servicios`, `amenazas`, `parametros_reglas`, `resumen_territorial` (con supresión), `mi_perfil`, `mis_tareas`, `brechas`, `decisiones`, `reportes_comunitarios` (según zona), `auditoria` (solo auditor).
+Funciones RPC: `registrar_recomendacion`, `registrar_decision_activacion`, `actualizar_brecha`, `completar_tarea`, `crear_reporte_comunitario`, `registrar_medicion`, `validar_medicion`, `cerrar_retorno`, `cambiar_rol`, `suspender_usuario`, `traspasar_cargo`.
+Los **códigos** (`flood`, `toilets`...) coinciden con los de la app para que el frontend no traduzca.
+
+## Retención (propuesta, la decides tú)
+
+| Dato | Propuesta | Razón |
+|---|---|---|
+| `ops.lecturas_iot` (simuladas) | 30 días | Sin valor tras la demo |
+| `ops.reportes_comunitarios` | 12 meses tras cerrar el evento, luego se anonimizan (se borra `creado_por`) | Necesidad operativa y minimización |
+| `idn.perfiles` | 1 año tras desactivar, luego se anonimizan | Trazabilidad de la entidad sin conservar la cuenta |
+| `aud.eventos` | Según tabla de retención documental de la entidad (Ley 594/2000, verificar) | Es un registro oficial |
+| `ops.decisiones_activacion`, `brechas`, `retornos` | Permanentes: son memoria institucional y sobreviven al cambio de gobierno | Continuidad |
+| Datos abiertos (`geo`, `ref`) | Permanentes, con snapshots versionados | Reproducibilidad |
+
+## Supresión de un titular
+
+La supresión anonimiza `idn.perfiles` (borra `alias_visible` y desvincula `auth.users`). La auditoría solo guarda el UUID, que deja de ser reidentificable al romper ese vínculo; la cadena de hash no se toca.
