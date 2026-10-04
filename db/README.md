@@ -19,6 +19,9 @@ Raíz de la base de datos del proyecto (RETO-01 Cali Activa) para montarla en **
 3. [`docs/ROLES_Y_PERMISOS.md`](docs/ROLES_Y_PERMISOS.md): los 8 roles, la matriz y las 13 cuentas de demostración.
 4. [`docs/DECISIONES.md`](docs/DECISIONES.md): por qué se diseñó así.
 5. [`../docs/cumplimiento/FUENTES.md`](../docs/cumplimiento/FUENTES.md): de dónde sale cada dato o norma y cuánto se verificó.
+6. [`../docs/cumplimiento/MATRIZ_NORMATIVA.md`](../docs/cumplimiento/MATRIZ_NORMATIVA.md): norma, control y evidencia; discusión de la región.
+7. [`../docs/cumplimiento/ENTES_DECISORES.md`](../docs/cumplimiento/ENTES_DECISORES.md): quién decide y ejecuta ante una emergencia en Cali.
+8. [`../docs/cumplimiento/RED_COMUNITARIA.md`](../docs/cumplimiento/RED_COMUNITARIA.md): juntas de acción comunal y administradores de conjuntos, y su capacitación.
 
 ## Reglas para quien trabaje aquí (también la IA del equipo)
 

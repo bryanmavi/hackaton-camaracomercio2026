@@ -132,3 +132,5 @@ Registro nominal de personas, envío real de SMS, Storage de fotos o documentos 
 5. **Texto libre:** ¿se permite `observacion` (280 caracteres con filtro) o solo campos estructurados? Lo más seguro es solo estructurados.
 6. **Idioma de los identificadores:** propongo tablas y columnas en español y códigos de amenaza y servicio en inglés (los de la app).
 7. **Repo público o privado** para `db/` (el repo es público hoy).
+8. **Animales (hallazgo nuevo):** la Ley 2474 de 2025 modificó la Ley 1523 para incluir a los animales en la gestión del riesgo (`docs/cumplimiento/FUENTES.md`). ¿Añadimos el servicio `animals` al catálogo y a las brechas de los albergues? Cuesta una fila en `ref.servicios` y no cambia el modelo.
+9. **Región de Supabase:** São Paulo (propuesta) o EE. UU. este (figura en la lista de la SIC). Ver `docs/cumplimiento/MATRIZ_NORMATIVA.md` §3.
