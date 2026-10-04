@@ -4,6 +4,7 @@ def inline(t):
     t=html.escape(t,quote=False)
     t=re.sub(r'`([^`]+)`',r'<code>\1</code>',t)
     t=re.sub(r'\*\*([^*]+)\*\*',r'<b>\1</b>',t)
+    t=re.sub(r'(?<![*\w])\*([^*\s][^*]*?)\*(?![*\w])',r'<i>\1</i>',t)
     t=re.sub(r'(?<![">])(https?://[^\s<)]+)',r'<a href="\1">\1</a>',t)
     return t
 out=[];i=0;inlist=None
@@ -12,6 +13,11 @@ def close():
     if inlist: out.append(f'</{inlist}>'); inlist=None
 while i<len(src):
     l=src[i]
+    if l.startswith('```'):
+        close(); i+=1; code=[]
+        while i<len(src) and not src[i].startswith('```'):
+            code.append(html.escape(src[i],quote=False)); i+=1
+        out.append('<pre>'+'\n'.join(code)+'</pre>'); i+=1; continue
     if l.startswith('|'):
         close(); rows=[]
         while i<len(src) and src[i].startswith('|'):
@@ -25,7 +31,9 @@ while i<len(src):
     elif l.startswith('> '): close(); out.append(f'<blockquote>{inline(l[2:])}</blockquote>')
     elif re.match(r'\s*(- |\d+\. )',l):
         tag='ol' if re.match(r'\s*\d+\.',l) else 'ul'
-        if inlist!=tag: close(); out.append(f'<{tag}>'); inlist=tag
+        if inlist!=tag:
+            close(); n0=re.match(r'\s*(\d+)\.',l)
+            out.append(f'<{tag} start="{n0.group(1)}">' if tag=='ol' and n0 else f'<{tag}>'); inlist=tag
         item=re.sub(r'^\s*(- |\d+\. )','',l)
         item=item.replace('[ ] ','☐ ')
         cls=' class="sub"' if l.startswith('  ') else ''
@@ -44,5 +52,7 @@ th,td{border:1px solid #9ab;padding:3px 5px;vertical-align:top;font-size:8.5pt}
 blockquote{background:#fff6dd;border-left:4px solid #e0a800;margin:6px 0;padding:4px 8px}
 code{font-family:"DejaVu Sans Mono";font-size:8pt}
 a{color:#0b4f6c;word-break:break-all}
-li.sub{margin-left:18px}'''
-open(sys.argv[2],'w',encoding='utf8').write(f'<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Hackathon Cali 2026 - Bitácora</title><style>{css}</style></head><body>'+'\n'.join(out)+'</body></html>')
+li.sub{margin-left:18px}
+pre{font-family:"DejaVu Sans Mono";font-size:8pt;background:#f2f6f8;border:1px solid #c5d5dc;padding:6px 8px;white-space:pre-wrap}'''
+titulo=next((html.escape(x[2:]) for x in src if x.startswith('# ')),'Hackathon Cali 2026 - Bitácora')
+open(sys.argv[2],'w',encoding='utf8').write(f'<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>{titulo}</title><style>{css}</style></head><body>'+'\n'.join(out)+'</body></html>')

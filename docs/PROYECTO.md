@@ -3,7 +3,7 @@
 **Equipo:** William Ortiz, Herlin Echeverry, Pablo Arango, Bryan Martínez Villamarín
 **Reto:** RETO-01 Cali Activa: espacios públicos que se transforman para cuidar
 **Enfoque:** plan de contingencia multiamenaza (sismo, inundación y sequía/El Niño) para espacios públicos, con organismos y mecanismos para el antes, el durante y el después.
-**Última actualización:** 4 de octubre de 2026: carga de los datos reales de Cali en la base (Hito 2), probada; los cruces de PostGIS coinciden exactamente con los de la app.
+**Última actualización:** 4 de octubre de 2026: base de datos montada en Supabase `dev` (12 migraciones, API restringida al esquema `api`), repo privado y equipo invitado.
 
 ---
 
@@ -541,11 +541,21 @@ Validación: `cd db && npm install && npm test` aplica las migraciones en PGlite
 
 Validación (`cd db && npm test`): 69 pruebas del SQL y 17 de carga, entre ellas la idempotencia, la atomicidad ante una falla a mitad de camino y la lectura pública como `anon`. Falta correrla en un proyecto real de Supabase; la URL de conexión se pasa solo por la terminal.
 
+## 6.28 Montaje en Supabase y acceso del equipo (4 de octubre)
+
+- **Repo privado:** el repo pasó a privado y la demo de GitHub Pages sigue publicada. Se invitó con permiso de escritura a Herlin (`helynecheverry`), Pablo (`PabloEArangoM`) y Bryan (`bryanmavi`). Las copias que ellos hicieron con fork **siguen públicas** hasta que cada uno las cierre.
+- **Pull request:** la base de datos va en el PR #2 (`db/esquema-inicial` → `main`).
+- **Supabase `dev`:** proyecto `rqxltixtsiqsakxapdue`, creado con la cuenta de GitHub. La CLI de Supabase quedó como dependencia de `db/`, con `db/supabase/config.toml`. Las **12 migraciones se aplicaron** con `supabase db push`.
+- **API verificada en Supabase real:** solo se expone el esquema `api`. Como público se leen los catálogos; las decisiones, la auditoría y las escrituras quedan bloqueadas, y `ops` y `public` no están expuestos.
+- **Documentos:** `db/docs/INFORME_MONTAJE_SUPABASE.pdf` (qué se hizo, con el detalle) y `db/docs/ACCESO_EQUIPO.pdf` (paso a paso para cada integrante).
+
 ## 7. Pendientes
 - [ ] **Base de datos:** el responsable de la BD revisa el SQL del Hito 1 y responde las 10 decisiones de `db/docs/MODELO_DATOS.md` §9 (el borrador asume el valor propuesto en cada una).
 - [x] **Base de datos (H2):** script de carga de los datos reales con verificación de `sha256` (sección 6.27).
 - [ ] Revisar las 3 huellas y las 18 zonas de amenaza con geometría no válida (¿reportarlas a la IDESC?), y las 23 JAC cuyo código de barrio no está en la capa de barrios.
-- [ ] **Base de datos (H3):** en un proyecto real de Supabase (`dev`): correr las migraciones y la carga (`npm run cargar`), configurar `api` como único esquema expuesto y activar el hook de Auth.
+- [x] **Base de datos (H3):** migraciones aplicadas en Supabase `dev` y `api` como único esquema expuesto (sección 6.28).
+- [ ] Supabase `dev`: activar el MFA TOTP y el hook del token, y correr la carga de datos reales (`npm run cargar`).
+- [ ] Cada integrante acepta la invitación, cierra su copia pública y sigue `db/docs/ACCESO_EQUIPO.pdf`. William los invita a la organización de Supabase con el rol Developer.
 - [x] Sustituir la descarga técnica principal por un informe de preparación legible, con todas las necesidades y opción de guardar como PDF.
 - [x] Integrar el fork de Herlin del 26 de septiembre (El kit y Word vigente) y publicar en GitHub Pages.
 - [x] Los 6 entregables del evento y el texto del pitch 4.2 (`entregables/entregables-evento/`).
