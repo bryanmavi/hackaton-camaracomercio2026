@@ -95,10 +95,12 @@ La contraseña de la base de datos, el token de la CLI, la clave `service_role` 
 1. ☑ **Exponer solo `api`:** hecho y verificado (`public` responde "no expuesto").
 2. ☐ **Activar el MFA TOTP:** *Authentication → Multi-Factor*.
 3. ☐ **Activar el hook del token:** *Authentication → Hooks → Customize Access Token (JWT) Claims*, tipo Postgres, esquema `idn`, función `custom_access_token_hook`.
-4. ☐ **Cargar los datos reales:** con la cadena del *Session pooler* (botón **Connect**), solo en la terminal:
+4. ☐ **Cargar los datos reales:** copia el host del *Session pooler* (botón **Connect**) y escribe la contraseña de forma oculta, para que no quede en el historial:
 ```
 cd ~/hackathon-cali-2026/db
-DATABASE_URL='postgresql://postgres.rqxltixtsiqsakxapdue:CONTRASEÑA@HOST-DEL-POOLER:5432/postgres?sslmode=require' npm run cargar
+read -rs PGPASSWORD && export PGPASSWORD
+DATABASE_URL='postgresql://postgres.rqxltixtsiqsakxapdue@HOST-DEL-POOLER:5432/postgres?sslmode=verify-full' npm run cargar
+unset PGPASSWORD
 ```
 5. ☐ **Invitar al equipo en Supabase:** *Organization settings → Team → Invite member*, con el rol **Developer** (guía aparte: `ACCESO_EQUIPO`).
 6. ☐ **Revisar y fusionar el PR #2.** Lo hace el responsable de la base de datos, que además responde las 10 decisiones abiertas de `MODELO_DATOS.md` §9.

@@ -13,7 +13,9 @@
 // No inventa datos: lo que la fuente no trae queda NULL (52 espacios sin comuna, 23 JAC con un barrio que no está en la capa).
 //
 // Uso contra Supabase o cualquier PostgreSQL (la URL vive SOLO en tu terminal, nunca en el repo):
-//   cd db && DATABASE_URL='postgresql://…' node scripts/cargar_datos_reales.mjs
+//   cd db && read -rs PGPASSWORD && export PGPASSWORD      # la contraseña no queda en el historial
+//   DATABASE_URL='postgresql://postgres.<ref>@<host-del-session-pooler>:5432/postgres?sslmode=verify-full' npm run cargar
+//   unset PGPASSWORD
 // Las pruebas (tests/carga.mjs) importan cargarDatosReales() y lo corren contra PGlite.
 
 import { createHash } from 'node:crypto';
@@ -235,7 +237,13 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const { default: pg } = await import('pg');
   // TLS según la URL (Supabase: añade ?sslmode=require). No se desactiva la verificación del certificado.
   const cliente = new pg.Client({ connectionString: process.env.DATABASE_URL });
-  await cliente.connect();
+  try {
+    await cliente.connect();
+  } catch (e) {
+    console.error(`No se pudo conectar a la base (${e.code ?? e.message}). Revisa el host del Session pooler, ` +
+      'el usuario postgres.<ref> y la contraseña (PGPASSWORD). No se tocó nada.');
+    process.exit(1);
+  }
   try {
     await cargarDatosReales(cliente);
   } catch (e) {
