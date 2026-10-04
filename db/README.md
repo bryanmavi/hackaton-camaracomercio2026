@@ -51,6 +51,9 @@ Se carga tal como viene, sin inventar: 52 espacios sin comuna, 23 JAC cuyo códi
 
 ## Dónde leer
 
+- [`docs/ACCESO_EQUIPO.md`](docs/ACCESO_EQUIPO.md): paso a paso para que cada integrante acceda a la base.
+- [`docs/ENTORNO_LINUX.md`](docs/ENTORNO_LINUX.md): herramientas, rutas, comandos y errores resueltos del entorno.
+- [`docs/INFORME_MONTAJE_SUPABASE.md`](docs/INFORME_MONTAJE_SUPABASE.md): qué se montó en Supabase y qué falta.
 0. [`docs/CONTRATO_API.md`](docs/CONTRATO_API.md): lo que puede usar el frontend (vistas y funciones).
 1. [`docs/MODELO_DATOS.md`](docs/MODELO_DATOS.md): principios, esquemas, diagrama, flujo y decisiones abiertas.
 2. [`docs/DICCIONARIO.md`](docs/DICCIONARIO.md): cada tabla, columna, clase de dato y retención.
