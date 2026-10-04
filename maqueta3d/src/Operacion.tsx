@@ -339,6 +339,181 @@ function CerrarRetorno({ decision, onHecho }: { decision: Decision; onHecho: () 
   );
 }
 
+
+/** Atributos verificables de un espacio (geo.mediciones_espacio). Lo desconocido no se escribe: no se declara. */
+const ATRIBUTOS: Record<string, { nombre: string; tipo: "num" | "bool" | "texto" | "estructural"; unidad?: string }> = {
+  capacidad_personas: { nombre: "Capacidad de personas", tipo: "num", unidad: "personas" },
+  banos: { nombre: "Baños operativos", tipo: "num", unidad: "baños" },
+  agua_l_dia: { nombre: "Agua disponible", tipo: "num", unidad: "L/día" },
+  accesibilidad: { nombre: "Accesible para personas con discapacidad", tipo: "bool" },
+  energia_respaldo: { nombre: "Energía de respaldo", tipo: "bool" },
+  evaluacion_estructural_vigente: { nombre: "Evaluación estructural vigente", tipo: "estructural" },
+  disponibilidad: { nombre: "Disponibilidad", tipo: "texto" },
+  administracion_acceso: { nombre: "Quién administra el acceso (cargo o entidad)", tipo: "texto" },
+  horario: { nombre: "Horario de acceso", tipo: "texto" },
+  acepta_animales_compania: { nombre: "Acepta animales de compañía", tipo: "bool" },
+  zona_animales: { nombre: "Zona separada para animales", tipo: "bool" },
+  capacidad_animales: { nombre: "Capacidad de animales", tipo: "num", unidad: "animales" },
+};
+interface Pendiente {
+  id: number; espacio_id: string; espacio_nombre: string; atributo: string; valor_num: number | null;
+  valor_bool: boolean | null; valor_texto: string | null; valor_fecha: string | null; unidad: string | null;
+  fuente_texto: string; evidencia_ref: string | null; reportado_en: string; propia: boolean; puedo_validar: boolean;
+  es_simulado: boolean;
+}
+const valorDe = (m: { atributo: string; valor_num: number | null; valor_bool: boolean | null; valor_texto: string | null; valor_fecha: string | null; unidad: string | null }) => {
+  const t = ATRIBUTOS[m.atributo]?.tipo;
+  if (t === "num") return num(m.valor_num, m.unidad ?? ATRIBUTOS[m.atributo]?.unidad ?? "");
+  if (t === "bool") return m.valor_bool ? "Sí" : "No";
+  if (t === "estructural") return m.valor_bool ? `Sí, del ${m.valor_fecha}` : "No hay evaluación vigente";
+  return m.valor_texto ?? "";
+};
+
+function Mediciones({ espacio, puedeDeclarar, puedeValidar }: { espacio: Space | null; puedeDeclarar: boolean; puedeValidar: boolean }) {
+  const [atributo, setAtributo] = useState("banos");
+  const [valorNum, setValorNum] = useState(0), [valorBool, setValorBool] = useState(true);
+  const [valorTexto, setValorTexto] = useState(""), [fecha, setFecha] = useState(hoy());
+  const [fuente, setFuente] = useState(""), [evidencia, setEvidencia] = useState("");
+  const [pendientes, setPendientes] = useState<Pendiente[]>([]);
+  const [verificadas, setVerificadas] = useState<(Pendiente & { validado_en: string })[]>([]);
+  const [evidenciaValidar, setEvidenciaValidar] = useState<Record<number, string>>({});
+  const [version, setVersion] = useState(0);
+  const { mensaje, ejecutar } = useMensaje();
+  const def = ATRIBUTOS[atributo];
+
+  useEffect(() => {
+    let consulta = supabase!.from("mediciones_pendientes").select("*").order("reportado_en", { ascending: false }).limit(100);
+    if (espacio) consulta = consulta.eq("espacio_id", espacio.properties.id);
+    consulta.then(({ data }) => setPendientes((data as Pendiente[]) ?? []));
+    if (espacio)
+      supabase!.from("mediciones_verificadas").select("*").eq("espacio_id", espacio.properties.id)
+        .then(({ data }) => setVerificadas((data as never[]) ?? []));
+    else setVerificadas([]);
+  }, [espacio, version]);
+
+  const declarar = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!espacio) return;
+    const valores =
+      def.tipo === "num" ? { p_valor_num: valorNum, p_unidad: def.unidad }
+      : def.tipo === "bool" ? { p_valor_bool: valorBool }
+      : def.tipo === "estructural" ? { p_valor_bool: valorBool, p_valor_fecha: valorBool ? fecha : null }
+      : { p_valor_texto: valorTexto.trim() };
+    if (await ejecutar(() => supabase!.rpc("registrar_medicion", {
+      p_espacio_id: espacio.properties.id, p_atributo: atributo, p_fuente_texto: fuente.trim(),
+      p_evidencia_ref: evidencia.trim() || null, ...valores,
+    }), "Medición declarada. Queda pendiente hasta que otra persona autorizada la verifique.")) {
+      setVersion((v) => v + 1);
+      setFuente("");
+      setEvidencia("");
+    }
+  };
+  const validar = async (m: Pendiente, aceptar: boolean) => {
+    if (await ejecutar(() => supabase!.rpc("validar_medicion", {
+      p_id: m.id, p_aceptar: aceptar, p_evidencia_ref: evidenciaValidar[m.id]?.trim() || null,
+    }), !aceptar ? "Medición rechazada."
+      : m.es_simulado ? "Medición verificada. Es SIMULADA (cuenta de demostración): no aparece en la ficha pública ni en el mapa."
+      : "Medición verificada: ya es pública en la ficha del espacio (se ve en el mapa al recargar)."))
+      setVersion((v) => v + 1);
+  };
+
+  return (
+    <div className="op-card">
+      <h3>Mediciones del espacio</h3>
+      <p className="small-note">
+        Lo que no se ha medido queda como desconocido, nunca como cero. Una medición declarada solo se hace pública
+        cuando otra persona autorizada la verifica con evidencia (cuatro ojos).
+      </p>
+      {espacio ? (
+        <>
+          <p className="small-note">Espacio: <strong>{espacio.properties.name}</strong> ({espacio.properties.id})</p>
+          {verificadas.length > 0 && (
+            <ul className="op-verificadas">
+              {verificadas.map((m) => (
+                <li key={m.atributo}><strong>{ATRIBUTOS[m.atributo]?.nombre ?? m.atributo}:</strong> {valorDe(m)} <small>· verificada {m.validado_en?.slice(0, 10)}{m.es_simulado ? " · SIMULADA, no pública" : ""}</small></li>
+              ))}
+            </ul>
+          )}
+          {puedeDeclarar && (
+            <form onSubmit={declarar}>
+              <div className="planning-controls">
+                <label>Atributo
+                  <select value={atributo} onChange={(e) => setAtributo(e.target.value)}>
+                    {Object.entries(ATRIBUTOS).map(([k, a]) => <option key={k} value={k}>{a.nombre}</option>)}
+                  </select>
+                </label>
+                {def.tipo === "num" && (
+                  <label>Valor ({def.unidad})
+                    <input type="number" min={0} value={valorNum} onChange={(e) => setValorNum(Math.max(0, Number(e.target.value)))} required />
+                  </label>
+                )}
+                {(def.tipo === "bool" || def.tipo === "estructural") && (
+                  <label>Valor
+                    <select value={valorBool ? "si" : "no"} onChange={(e) => setValorBool(e.target.value === "si")}>
+                      <option value="si">Sí</option>
+                      <option value="no">No</option>
+                    </select>
+                  </label>
+                )}
+                {def.tipo === "estructural" && valorBool && (
+                  <label>Fecha de la evaluación
+                    <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} required />
+                  </label>
+                )}
+                {def.tipo === "texto" && (
+                  <label>Valor
+                    <input value={valorTexto} onChange={(e) => setValorTexto(e.target.value)} maxLength={280} required
+                      placeholder={atributo === "horario" ? "Ej. 6:00 a 22:00" : "Sin nombres ni teléfonos"} />
+                  </label>
+                )}
+              </div>
+              {def.tipo === "estructural" && (
+                <p className="small-note">Solo se registra si existe una evaluación vigente y su fecha. La plataforma no guarda ni emite conceptos técnicos.</p>
+              )}
+              <div className="planning-controls">
+                <label>Fuente (cargo o documento, nunca un nombre de persona)
+                  <input value={fuente} onChange={(e) => setFuente(e.target.value)} maxLength={280} required placeholder="Ej. Inspección de la UAESP" />
+                </label>
+                <label>Referencia de evidencia (opcional)
+                  <input value={evidencia} onChange={(e) => setEvidencia(e.target.value)} maxLength={120} placeholder="Ej. Acta 12 de 2026" />
+                </label>
+              </div>
+              <button type="submit">Declarar medición</button>
+            </form>
+          )}
+        </>
+      ) : (
+        <p className="small-note">Selecciona un espacio en el mapa para ver y declarar sus mediciones. Abajo se listan todas las pendientes de tu alcance.</p>
+      )}
+      <Aviso mensaje={mensaje} />
+      <h4 className="op-subtitulo">Pendientes de verificar ({pendientes.length})</h4>
+      {pendientes.length === 0 ? <p className="small-note">No hay mediciones pendientes en tu alcance.</p> : (
+        <div className="table-scroll"><table className="gap-table">
+          <thead><tr><th>Espacio</th><th>Atributo y valor</th><th>Fuente</th><th>{puedeValidar ? "Validación" : "Estado"}</th></tr></thead>
+          <tbody>{pendientes.map((m) => (
+            <tr key={m.id}>
+              <td>{m.espacio_nombre}<br /><small>{m.espacio_id}{m.es_simulado ? " · SIMULADO" : ""}</small></td>
+              <td>{ATRIBUTOS[m.atributo]?.nombre ?? m.atributo}<br /><strong>{valorDe(m)}</strong></td>
+              <td>{m.fuente_texto}{m.evidencia_ref && <><br /><small>Evidencia: {m.evidencia_ref}</small></>}<br /><small>{m.reportado_en.slice(0, 10)}</small></td>
+              <td>
+                {m.puedo_validar ? (
+                  <div className="op-validar">
+                    <input aria-label={`Evidencia para validar ${m.id}`} placeholder={m.evidencia_ref ?? "Evidencia (acta o documento)"}
+                      value={evidenciaValidar[m.id] ?? ""} onChange={(e) => setEvidenciaValidar({ ...evidenciaValidar, [m.id]: e.target.value })} />
+                    <button className="text-button" onClick={() => validar(m, true)}>Verificar</button>
+                    <button className="text-button" onClick={() => validar(m, false)}>Rechazar</button>
+                  </div>
+                ) : m.propia ? <small>Declarada por ti: la verifica otra persona</small>
+                  : <small>Pendiente de la entidad responsable</small>}
+              </td>
+            </tr>))}
+          </tbody>
+        </table></div>
+      )}
+    </div>
+  );
+}
+
 export default function Operacion({ espacio, onMap }: { espacio: Space | null; onMap: () => void }) {
   const { session, perfil, error, puede, recargar } = useSession();
   const [decisiones, setDecisiones] = useState<Decision[]>([]);
@@ -396,7 +571,10 @@ export default function Operacion({ espacio, onMap }: { espacio: Space | null; o
           : <p className="small-note">Completa la verificación en dos pasos para registrar decisiones.</p>
       )}
       {perfil && puede("reporte.crear") && <ReporteComunitario espacio={espacio} onHecho={refrescar} />}
-      {perfil && !espacio && (puede("decision.activar") || puede("reporte.crear")) && (
+      {perfil && (puede("medicion.declarar") || puede("medicion.validar")) && (
+        <Mediciones espacio={espacio} puedeDeclarar={puede("medicion.declarar")} puedeValidar={puede("medicion.validar")} />
+      )}
+      {perfil && !espacio && (puede("decision.activar") || puede("reporte.crear") || puede("medicion.declarar")) && (
         <button className="text-button" onClick={onMap}>Ir al mapa para elegir un espacio</button>
       )}
 

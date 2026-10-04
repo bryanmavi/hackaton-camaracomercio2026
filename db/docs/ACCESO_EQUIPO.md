@@ -67,11 +67,12 @@ supabase.schema('api').rpc('registrar_medicion', { ... })
 ```
 4. Para listas y mapas usa `api.espacios`; la ficha completa (`api.espacio_ficha`) pídela por `id`.
 5. Arranca la app con `cd maqueta3d && npm install && npm run dev`. En el encabezado debe decir **"Base de datos"**; si dice "Respaldo estático", la base no respondió, y si no dice nada, faltan las variables.
-6. La pestaña **06 Operación** aparece solo con la base configurada. Ahí se inicia sesión y, según el rol, se registran decisiones, se avanzan brechas, se completan tareas o se envían reportes comunitarios.
+6. La pestaña **06 Operación** aparece solo con la base configurada. Ahí se inicia sesión y, según el rol, se registran decisiones, se avanzan brechas, se completan tareas, se envían reportes comunitarios y se declaran o verifican mediciones de los espacios.
+7. Lo que hagas con una cuenta de demostración queda marcado como **SIMULADO** y nunca aparece en la ficha pública ni en el mapa como dato real.
 
 **Cuentas de demostración (ya creadas):** hay 13, una por rol (lista en `db/docs/ROLES_Y_PERMISOS.md` §3), con correos como `sgred.demo@example.org`. Las contraseñas las tiene **solo William** y se piden por un canal seguro, nunca por el grupo. Recuerda:
 - Son cuentas **compartidas y ficticias**: no cambies su contraseña ni sus datos.
-- `sgred`, `coordinacion` y `plataforma` necesitan inscribir un factor TOTP (por ejemplo, Google Authenticator) para decidir activaciones o gestionar usuarios; sin eso, la base lo bloquea. La pantalla de inscripción todavía no existe en la app.
+- `sgred`, `coordinacion` y `plataforma` necesitan inscribir un factor TOTP (por ejemplo, Google Authenticator) para decidir activaciones o gestionar usuarios; sin eso, la base lo bloquea. Se inscribe en la pestaña Operación con el código QR. Funciona con el plan gratuito; lo que exige plan Pro es el SMS, que no se usa.
 
 ## 5. Proponer un cambio a la base de datos
 

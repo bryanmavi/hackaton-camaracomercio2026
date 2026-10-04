@@ -1641,3 +1641,25 @@ footer > span {
   font-weight: 400 !important;
   margin: 4px 0 !important;
 }
+.op-subtitulo {
+  margin: 18px 0 8px;
+  font-size: 13px;
+}
+.op-verificadas {
+  margin: 8px 0 14px;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.op-validar {
+  display: grid;
+  gap: 4px;
+  min-width: 170px;
+}
+.op-validar input {
+  font: inherit;
+  font-size: 12px;
+  padding: 0.4rem;
+  border: 1px solid #75968b;
+  border-radius: 0.3rem;
+}

@@ -3,7 +3,7 @@
 **Equipo:** William Ortiz, Herlin Echeverry, Pablo Arango, Bryan Martínez Villamarín
 **Reto:** RETO-01 Cali Activa: espacios públicos que se transforman para cuidar
 **Enfoque:** plan de contingencia multiamenaza (sismo, inundación y sequía/El Niño) para espacios públicos, con organismos y mecanismos para el antes, el durante y el después.
-**Última actualización:** 4 de octubre de 2026: la app lee de la base de datos (con respaldo estático) y tiene la pestaña Operación con inicio de sesión, verificación en dos pasos y acciones por rol.
+**Última actualización:** 4 de octubre de 2026: mediciones en la app (declarar y verificar con cuatro ojos); lo simulado nunca se publica como real.
 
 ---
 
@@ -564,6 +564,13 @@ Prueba de punta a punta en Supabase real: las 13 cuentas inician sesión con su 
 - **Pestaña 06 Operación:** inicio de sesión con las cuentas de demostración, verificación en dos pasos con código QR, y acciones según el rol: registrar decisiones con su acto administrativo (las necesidades salen de `planning.ts`), avanzar brechas, completar tareas, cerrar retornos y reportar conteos comunitarios.
 - **Pruebas:** las 23 unitarias y las 22 de navegador siguen pasando, y la prueba de humo contra Supabase real salió bien.
 
+## 6.31 Mediciones desde la app (4 de octubre)
+
+- **Declarar y verificar:** en la pestaña Operación se declaran mediciones del espacio seleccionado (capacidad, baños, agua, accesibilidad, energía, disponibilidad, horario, animales y evaluación estructural; esta última solo sí/no y fecha). Quien tiene la competencia las verifica o rechaza con evidencia, y quien declara no puede verificar.
+- **Probado en Supabase real:** la JAC A declaró 3 baños en `epou-9535`; UAESP los verificó.
+- **Hallazgo corregido:** una medición verificada por cuentas de demostración habría aparecido en la ficha pública de un parque real. Ahora la ficha y el mapa solo muestran mediciones reales, y lo simulado se ve marcado únicamente en Operación.
+- **TOTP:** se comprobó que funciona con el plan gratuito de Supabase. El SMS es de pago y no se usa.
+
 ## 7. Pendientes
 - [ ] **Base de datos:** el responsable de la BD revisa el SQL del Hito 1 y responde las 10 decisiones de `db/docs/MODELO_DATOS.md` §9 (el borrador asume el valor propuesto en cada una).
 - [x] **Base de datos (H2):** script de carga de los datos reales con verificación de `sha256` (sección 6.27).
@@ -574,7 +581,8 @@ Prueba de punta a punta en Supabase real: las 13 cuentas inician sesión con su 
 - [x] **Hito 5:** 13 cuentas de demostración creadas y verificadas (sección 6.29).
 - [ ] Supabase `dev`: activar el MFA TOTP y **cambiar la contraseña de la base** (quedó expuesta en el chat).
 - [x] App: lectura desde `api`, inicio de sesión, verificación en dos pasos y pestaña Operación (sección 6.30).
-- [ ] App: probar con MFA real el registro de una decisión; agregar la declaración y validación de mediciones; bajar el tiempo de carga desde la base (≈8,5 s).
+- [x] App: declarar y verificar mediciones (sección 6.31).
+- [ ] App: probar con MFA real el registro de una decisión; bajar el tiempo de carga desde la base (≈8,5 s).
 - [ ] Cada integrante acepta la invitación, cierra su copia pública y sigue `db/docs/ACCESO_EQUIPO.pdf`. William los invita a la organización de Supabase con el rol Developer.
 - [x] Sustituir la descarga técnica principal por un informe de preparación legible, con todas las necesidades y opción de guardar como PDF.
 - [x] Integrar el fork de Herlin del 26 de septiembre (El kit y Word vigente) y publicar en GitHub Pages.

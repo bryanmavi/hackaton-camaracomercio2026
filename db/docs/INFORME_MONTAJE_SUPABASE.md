@@ -146,7 +146,10 @@ unset PGPASSWORD
 - **Migración 14:** vista `api.mediciones_verificadas` y columna `orden_fuente` (la posición en el archivo de la IDESC), para que listas y mapa salgan en el mismo orden. Los datos se recargaron en Supabase.
 - **Pestaña 06 Operación:** inicio de sesión, verificación en dos pasos (inscripción con código QR) y, según los permisos de `api.mi_perfil`, registrar decisiones con su acto administrativo (las necesidades salen de `planning.ts`), avanzar brechas, completar tareas, cerrar retornos y enviar reportes comunitarios.
 - **Pruebas:** 23 unitarias y 22 de navegador de la app siguen pasando en modo estático. La prueba de humo contra Supabase real confirmó: encabezado "Base de datos"; UAESP inicia sesión y ve su perfil; la Secretaría ve la verificación en dos pasos, con la decisión bloqueada hasta completarla.
-- **Pendiente:** la lectura completa tarda unos 8,5 s desde Colombia. Se puede mejorar con vistas más livianas o caché. Falta probar en el navegador el registro de una decisión con MFA real, y declarar y validar mediciones desde la app.
+- **Mediciones (migración 15):** en Operación se declara una medición del espacio seleccionado; el formulario cambia según el tipo de dato, y la evaluación estructural es solo sí/no con fecha, sin concepto. La lista de pendientes trae los botones Verificar y Rechazar para quien puede validar ese atributo. Probado en Supabase real: la JAC A declaró 3 baños en `epou-9535` y no pudo validarlos; UAESP los verificó con evidencia.
+- **Lo simulado no se publica como real:** la ficha pública (`api.espacio_ficha`) y el mapa excluyen las mediciones de las cuentas demo. En `epou-9535` la ficha sigue en `banos: null`, mientras `api.mediciones_verificadas` muestra el dato marcado `es_simulado: true`. En `dev` queda esa única medición de demostración.
+- **TOTP en el plan gratuito:** comprobado en el proyecto con una inscripción de prueba que se borró al instante. El MFA por SMS sí exige plan Pro, pero no se usa.
+- **Pendiente:** la lectura completa tarda unos 8,5 s desde Colombia. Se puede mejorar con vistas más livianas o caché. Falta probar en el navegador el registro de una decisión con MFA real.
 
 ## 11. Decisiones tomadas en esta sesión
 

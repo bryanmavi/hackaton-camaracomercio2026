@@ -193,9 +193,27 @@ select pruebas.anotar('quien reporta no valida (cuatro ojos)',
   pruebas.error_de(format('select api.validar_medicion(%s, true, %L)', (select valor from ids where clave = 'med2'), 'Acta 2')) = '42501');
 select pruebas.anotar('evaluación estructural no admite texto (no hay concepto)',
   pruebas.error_de($q$select api.registrar_medicion('epou-1','evaluacion_estructural_vigente','x',p_valor_texto=>'APTO')$q$) = '23514');
+-- Mediciones pendientes (migración 15)
+select pruebas.anotar('gestión del riesgo ve su medición pendiente como propia y no validable',
+  (select propia and not puedo_validar from api.mediciones_pendientes where atributo = 'capacidad_personas'));
+select pruebas.como('00000000-0000-0000-0000-000000000004');   -- UAESP
+select pruebas.anotar('UAESP ve la pendiente pero no puede validar capacidad (no es su servicio)',
+  (select not propia and not puedo_validar from api.mediciones_pendientes where atributo = 'capacidad_personas'));
+select pruebas.como('00000000-0000-0000-0000-000000000006');   -- comunitario A, comuna 01
+select pruebas.anotar('comunitario ve las pendientes de su zona sin poder validar',
+  (select count(*) = 1 and bool_and(not puedo_validar) from api.mediciones_pendientes));
+select pruebas.como('00000000-0000-0000-0000-000000000007');   -- comunitario B, comuna 02
+select pruebas.anotar('comunitario de otra zona no ve las pendientes', (select count(*) from api.mediciones_pendientes) = 0);
+select pruebas.como('00000000-0000-0000-0000-000000000009');   -- consulta
+select pruebas.anotar('consulta no ve mediciones pendientes', (select count(*) from api.mediciones_pendientes) = 0);
+select pruebas.como('00000000-0000-0000-0000-000000000003');   -- consulta (aún no traspasado)
 reset role;
 set role anon;
-select pruebas.anotar('la ficha pública muestra lo verificado (4 baños)', (select banos = 4 from api.espacio_ficha where id = 'epou-1'));
+select pruebas.anotar('anon no lee mediciones pendientes', pruebas.error_de('select * from api.mediciones_pendientes') = '42501');
+reset role;
+set role anon;
+select pruebas.anotar('la ficha pública NO muestra una medición verificada simulada', (select banos is null from api.espacio_ficha where id = 'epou-1'));
+select pruebas.anotar('lo verificado simulado sigue visible y marcado', (select valor_num = 4 and es_simulado from api.mediciones_verificadas where espacio_id = 'epou-1' and atributo = 'banos'));
 select pruebas.anotar('la ficha pública no muestra lo solo declarado', (select capacidad_personas is null from api.espacio_ficha where id = 'epou-1'));
 select pruebas.anotar('anon no ve los UUID de quien validó',
   pruebas.error_de('select validado_por from geo.mediciones_espacio') = '42501');

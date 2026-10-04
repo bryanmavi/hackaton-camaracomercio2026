@@ -9,9 +9,9 @@
 |---|---|
 | `espacios` | Los espacios con `lon` y `lat`, sin geometría pesada |
 | `espacio_huellas` | La huella GeoJSON de cada espacio EPOU (pedir solo las necesarias) |
-| `espacio_ficha` | La ficha completa: fuente + última medición **verificada** + cruces de amenaza (`cruce_inundacion_fluvial`…). `disponibilidad` vale "Por confirmar con la entidad responsable" si no hay dato |
+| `espacio_ficha` | La ficha completa (solo mediciones **reales**; nunca las simuladas de las cuentas demo): fuente + última medición **verificada** + cruces de amenaza (`cruce_inundacion_fluvial`…). `disponibilidad` vale "Por confirmar con la entidad responsable" si no hay dato |
 | `espacio_exposicion` | Cruces espacio × zona de amenaza. Sin cruce no significa sin amenaza |
-| `mediciones_verificadas` | Última medición **verificada** por espacio y atributo (ligera; la usa la app para capacidad, baños, agua y disponibilidad) |
+| `mediciones_verificadas` | Última medición **verificada** por espacio y atributo, con `es_simulado`. El mapa de la app solo usa las reales |
 | `comunas`, `barrios`, `zonas_amenaza` | Con `geometria` en GeoJSON |
 | `amenazas`, `servicios`, `funciones_espacio`, `parametros_reglas` | Catálogos. `parametros_reglas` reemplaza las constantes de `planningRules` |
 | `entidades`, `responsabilidades` | Matriz de responsabilidades, marcada `propuesta` |
@@ -24,6 +24,7 @@
 | `mi_perfil` | El propio perfil, con `permisos` (lista) y `aal2` (si la sesión tiene MFA). Úsala para mostrar u ocultar botones |
 | `decisiones` | `gestion_riesgo` y `auditor`: todas. Entidad: donde tiene brechas o tareas. Comunitario: las vigentes de su zona |
 | `brechas` | `gestion_riesgo` y `auditor`: todas. Entidad: las suyas. Incluye `bloquea_activacion` |
+| `mediciones_pendientes` | Mediciones declaradas sin verificar, según el alcance. Trae `propia` (cuatro ojos) y `puedo_validar`, que sirven para mostrar u ocultar botones; quien autoriza es `validar_medicion` |
 | `mis_tareas` | Tareas del protocolo de la propia entidad (o todas para `gestion_riesgo` y `auditor`) |
 | `reportes_comunitarios` | Comunitario: los de su organización y su zona. `gestion_riesgo` y `auditor`: todos |
 | `resumen_territorial` | Agregados por comuna; los conteos operativos menores al umbral salen `null` |

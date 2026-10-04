@@ -15,7 +15,7 @@ export interface ApiRows {
   }[];
   huellas: { id: string; geometria: MultiPolygon }[];
   exposicion: { espacio_id: string; zona_id: number; amenaza_tipo: string; etiqueta: string | null }[];
-  mediciones: { espacio_id: string; atributo: string; valor_num: number | null; valor_texto: string | null }[];
+  mediciones: { espacio_id: string; atributo: string; valor_num: number | null; valor_texto: string | null; es_simulado?: boolean }[];
   comunas: { codigo: string; nombre: string; geometria: MultiPolygon }[];
   barrios: { codigo: string; nombre: string; comuna_codigo: string; geometria: MultiPolygon }[];
   zonas: { id: number; amenaza_tipo: string; etiqueta: string | null; fuente_clave: string; geometria: MultiPolygon }[];
@@ -46,7 +46,8 @@ export function buildTerritory(rows: ApiRows, manifest: Manifest): Territory {
     cruces.set(x.espacio_id, c);
   }
   const medida = new Map<string, Map<string, { valor_num: number | null; valor_texto: string | null }>>();
-  for (const m of rows.mediciones) {
+  // El mapa público solo muestra mediciones reales; las simuladas (cuentas demo) se ven en Operación.
+  for (const m of rows.mediciones.filter((x) => !x.es_simulado)) {
     const porEspacio = medida.get(m.espacio_id) ?? new Map();
     porEspacio.set(m.atributo, m);
     medida.set(m.espacio_id, porEspacio);
@@ -128,7 +129,7 @@ export async function loadTerritoryFromApi(cliente: Consultable, manifest: Manif
       "id,nombre,tipo,condicion,comuna_codigo,barrio_nombre,limite_ambiguo,lon,lat,area_m2,fuente_clave,metodo_evaluacion,comuna_fuente,barrio_fuente", "orden_fuente"),
     todas<ApiRows["huellas"][number]>(cliente, "espacio_huellas", "id,geometria", "id"),
     todas<ApiRows["exposicion"][number]>(cliente, "espacio_exposicion", "espacio_id,zona_id,amenaza_tipo,etiqueta", "zona_id,espacio_id"),
-    todas<ApiRows["mediciones"][number]>(cliente, "mediciones_verificadas", "espacio_id,atributo,valor_num,valor_texto", "espacio_id,atributo"),
+    todas<ApiRows["mediciones"][number]>(cliente, "mediciones_verificadas", "espacio_id,atributo,valor_num,valor_texto,es_simulado", "espacio_id,atributo"),
     todas<ApiRows["comunas"][number]>(cliente, "comunas", "codigo,nombre,geometria", "orden_fuente"),
     todas<ApiRows["barrios"][number]>(cliente, "barrios", "codigo,nombre,comuna_codigo,geometria", "orden_fuente"),
     todas<ApiRows["zonas"][number]>(cliente, "zonas_amenaza", "id,amenaza_tipo,etiqueta,fuente_clave,geometria", "id"),
