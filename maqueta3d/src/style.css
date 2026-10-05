@@ -1542,3 +1542,124 @@ footer > span {
 .brand { min-width: 0; }
 .brand > span:last-child { min-width: 0; }
 .brand small { max-width: 230px; letter-spacing: 1px; line-height: 1.4; }
+/* Operación con la base de datos */
+.operacion {
+  display: grid;
+  gap: 18px;
+  padding: 24px 0 48px;
+}
+.op-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px 20px;
+}
+.op-card h3 {
+  margin: 0 0 8px;
+}
+.op-perfil {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.op-login,
+.op-mfa {
+  max-width: 460px;
+}
+.op-login label,
+.op-bloque,
+.op-inline label,
+.op-retorno label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 12px 0;
+}
+.op-login input,
+.op-bloque textarea,
+.op-inline input,
+.op-retorno input {
+  font: inherit;
+  padding: 0.6rem;
+  border: 1px solid #75968b;
+  border-radius: 0.3rem;
+  background: #fff;
+  color: #163e36;
+}
+.op-inline {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.op-qr {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.op-qr img {
+  background: #fff;
+  border: 1px solid var(--border);
+}
+.op-aviso {
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  margin: 10px 0 0;
+}
+.op-aviso.ok {
+  background: #e6f2ec;
+  border-left: 3px solid var(--green);
+}
+.op-aviso.error {
+  background: #fdecea;
+  border-left: 3px solid #b3261e;
+}
+.op-tareas {
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.op-tareas li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.op-retorno {
+  min-width: 220px;
+}
+.op-check {
+  display: flex !important;
+  gap: 6px;
+  align-items: center;
+  font-weight: 400 !important;
+  margin: 4px 0 !important;
+}
+.op-subtitulo {
+  margin: 18px 0 8px;
+  font-size: 13px;
+}
+.op-verificadas {
+  margin: 8px 0 14px;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.op-validar {
+  display: grid;
+  gap: 4px;
+  min-width: 170px;
+}
+.op-validar input {
+  font: inherit;
+  font-size: 12px;
+  padding: 0.4rem;
+  border: 1px solid #75968b;
+  border-radius: 0.3rem;
+}

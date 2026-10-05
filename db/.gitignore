@@ -1,0 +1,19 @@
+# Nada de secretos en el repo (es público)
+.env
+.env.*
+*.local
+*.local.*
+supabase/.branches
+supabase/.temp
+supabase/.env
+credenciales*
+*credentials*
+*.pem
+*.key
+# Volcados y respaldos: solo cifrados y fuera del repo
+*.dump
+*.sql.gz
+*.backup
+
+# Dependencias de las pruebas
+node_modules/

@@ -12,6 +12,9 @@ import {
 const Intervention = lazy(() => import("./Intervention"));
 const Prevention = lazy(() => import("./Prevention"));
 const SiteScene = lazy(() => import("./SiteScene"));
+const Operacion = lazy(() => import("./Operacion"));
+import { supabase } from "./supabase";
+import { loadTerritoryFromApi } from "./territoryApi";
 const normalize = (text: string) =>
   text
     .normalize("NFD")
@@ -20,7 +23,8 @@ const normalize = (text: string) =>
 
 export default function App() {
   const [data, setData] = useState<Territory | null>(null),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [origen, setOrigen] = useState<"base" | "estatico" | "respaldo">("estatico");
   const [tab, setTab] = useState("map"),
     [commune, setCommune] = useState(""),
     [neighborhood, setNeighborhood] = useState("");
@@ -35,31 +39,45 @@ export default function App() {
     [showStreets, setShowStreets] = useState(true);
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all(
-      [
-        "spaces",
-        "communes",
-        "neighborhoods",
-        "flood",
-        "seismic",
-        "manifest",
-      ].map(async (key) => {
-        const r = await fetch(`${import.meta.env.BASE_URL}data/${key}.json`, {
-          signal: controller.signal,
-        });
-        if (!r.ok) throw new Error(`No se pudo cargar ${key}`);
-        return [key, await r.json()];
-      }),
-    )
-      .then((entries) =>
-        setData(Object.fromEntries(entries) as unknown as Territory),
-      )
-      .catch((e) => {
-        if (e.name !== "AbortError")
-          setError(
-            "No se pudieron cargar los datos. Comprueba la conexión con la aplicación y vuelve a cargar.",
-          );
+    const estatico = async (key: string) => {
+      const r = await fetch(`${import.meta.env.BASE_URL}data/${key}.json`, {
+        signal: controller.signal,
       });
+      if (!r.ok) throw new Error(`No se pudo cargar ${key}`);
+      return r.json();
+    };
+    (async () => {
+      const manifest = await estatico("manifest");
+      // Con base de datos configurada, los datos salen de `api`; si no responde, se usan los JSON (respaldo público).
+      if (supabase) {
+        try {
+          const territorio = await loadTerritoryFromApi(supabase as never, manifest);
+          if (!controller.signal.aborted) {
+            setData(territorio);
+            setOrigen("base");
+          }
+          return;
+        } catch (e) {
+          console.warn("Base de datos no disponible; se usan los archivos estáticos.", e);
+          setOrigen("respaldo");
+        }
+      }
+      const entries = await Promise.all(
+        ["spaces", "communes", "neighborhoods", "flood", "seismic"].map(
+          async (key) => [key, await estatico(key)],
+        ),
+      );
+      if (!controller.signal.aborted)
+        setData({
+          ...Object.fromEntries(entries),
+          manifest,
+        } as unknown as Territory);
+    })().catch((e) => {
+      if (e.name !== "AbortError")
+        setError(
+          "No se pudieron cargar los datos. Comprueba la conexión con la aplicación y vuelve a cargar.",
+        );
+    });
     return () => controller.abort();
   }, []);
   const records = data?.spaces.features ?? [];
@@ -141,7 +159,14 @@ export default function App() {
         <span className="project-tag">
           RETO 01 <span> / </span> EXPLORADOR TERRITORIAL
         </span>
-        <span className="status-dot">Datos públicos · Cali</span>
+        <span className="status-dot">
+          Datos públicos · Cali
+          {origen === "base"
+            ? " · Base de datos"
+            : origen === "respaldo"
+              ? " · Respaldo estático (la base no respondió)"
+              : ""}
+        </span>
       </header>
       <main>
         <section className="intro">
@@ -203,6 +228,14 @@ export default function App() {
           >
             05 <span>El kit</span>
           </button>
+          {supabase && (
+            <button
+              className={tab === "operacion" ? "active" : ""}
+              onClick={() => setTab("operacion")}
+            >
+              06 <span>Operación</span>
+            </button>
+          )}
           <a href={`${import.meta.env.BASE_URL}data/sectores.csv`} download>
             ↓ Resumen por sector
           </a>
@@ -217,6 +250,10 @@ export default function App() {
           <p role="status" className="notice">
             Cargando el inventario y las capas de Cali…
           </p>
+        ) : tab === "operacion" ? (
+          <Suspense fallback={<p>Cargando operación…</p>}>
+            <Operacion espacio={selected} onMap={() => setTab("map")} />
+          </Suspense>
         ) : tab === "prevention" ? (
           <Suspense fallback={<p>Cargando orientación…</p>}>
             <Prevention onMap={() => setTab("map")} />

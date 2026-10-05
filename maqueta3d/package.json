@@ -16,6 +16,7 @@
   "dependencies": {
     "@react-three/drei": "10.7.6",
     "@react-three/fiber": "9.3.0",
+    "@supabase/supabase-js": "^2.117.2",
     "@turf/turf": "7.2.0",
     "leaflet": "1.9.4",
     "react": "19.1.1",

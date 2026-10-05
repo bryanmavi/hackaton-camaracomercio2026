@@ -18,9 +18,10 @@ export interface SpaceProperties {
   assessmentMethod: string;
   availability: string;
   structuralAssessment: null;
-  capacity: null;
-  toilets: null;
-  waterLitersPerDay: null;
+  /** null = desconocido (sin medición verificada), nunca cero */
+  capacity: number | null;
+  toilets: number | null;
+  waterLitersPerDay: number | null;
 }
 export type Space = Feature<Geometry, SpaceProperties>;
 export interface Source {

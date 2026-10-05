@@ -3,7 +3,7 @@
 **Equipo:** William Ortiz, Herlin Echeverry, Pablo Arango, Bryan Martínez Villamarín
 **Reto:** RETO-01 Cali Activa: espacios públicos que se transforman para cuidar
 **Enfoque:** plan de contingencia multiamenaza (sismo, inundación y sequía/El Niño) para espacios públicos, con organismos y mecanismos para el antes, el durante y el después.
-**Última actualización:** 26 de septiembre de 2026: informe de preparación legible e imprimible (fork de Herlin) integrado en la app; 6 entregables del evento y pitch 4.2.
+**Última actualización:** 4 de octubre de 2026: la app carga desde la base en 1,3–1,8 s (antes ≈ 8,5 s).
 
 ---
 
@@ -516,7 +516,79 @@ Validación: compilación de producción; siete pruebas de navegador de planific
 
 Con esto queda resuelto el ajuste «resumen exportable legible» que salió de las rondas de prueba SIMULADAS (sección 6.24).
 
+## 6.26 Base de datos: del modelo al SQL (3 y 4 de octubre)
+
+El 3 de octubre quedaron en `db/docs/` el modelo de datos para **Supabase** (PostgreSQL + PostGIS), el diccionario, los 8 roles con su matriz de permisos y 9 decisiones de arquitectura. En `docs/cumplimiento/` quedaron las normas verificadas, los entes decisores, la red comunitaria y la matriz normativa. El 4 de octubre se escribió el **SQL en borrador** (`db/supabase/migrations/`, 11 migraciones con el formato de la CLI de Supabase), que queda en revisión del responsable de la BD.
+
+Lo que la base hace cumplir por sí misma, sin depender del frontend:
+- **Recomienda ≠ decide:** solo `gestion_riesgo` con verificación en dos pasos registra una activación, y debe citar el acto administrativo. Si no sigue la recomendación, exige justificación.
+- **Exclusión por diseño:** no hay tabla de personas. Los reportes comunitarios son conteos (los grupos de edad deben sumar el total), y los textos libres rechazan correos, teléfonos y números largos.
+- **Desconocido ≠ cero:** el faltante de una brecha es `NULL` si no hay medición **verificada**. Verificar exige evidencia y otra persona (cuatro ojos). De la evaluación estructural solo se guarda sí/no y la fecha, nunca un concepto.
+- **Alcance:** cada entidad ve y actualiza solo sus brechas y tareas; cada junta, solo su zona. `consulta` ve agregados, con supresión de conteos menores a 5 (umbral propuesto).
+- **Continuidad:** los permisos van al cargo. El traspaso de cargo conserva el historial, y una suspensión surte efecto de inmediato.
+- **Trazabilidad:** auditoría de solo inserción encadenada por SHA-256. La prueba incluye una manipulación deliberada, que la verificación detecta.
+- **Una sola puerta:** el frontend solo ve el esquema `api` (contrato en `db/docs/CONTRATO_API.md`), y ningún rol escribe directo en las tablas.
+
+Validación: `cd db && npm install && npm test` aplica las migraciones en PGlite (PostgreSQL 18 + PostGIS 3.6 en WASM; aquí no hay Docker ni CLI de Supabase) y corre **69 pruebas, todas en verde**. Todo lo institucional (entidades, matriz de responsabilidades, protocolo de 11 pasos, funciones del espacio por amenaza) va como **propuesta**, sin plazos ni cifras inventadas. Los ajustes al pasar del diccionario al SQL están en `db/docs/DICCIONARIO.md` §0.
+
+## 6.27 Base de datos: carga de los datos reales (4 de octubre)
+
+`db/scripts/cargar_datos_reales.mjs` carga en la base los datos abiertos que ya usa la app, en una sola transacción y de forma repetible:
+- **Primero verifica la fuente:** el `sha256` y el conteo de los 9 archivos crudos de la IDESC coinciden con `maqueta3d/public/data/manifest.json`. Si uno no coincide, no toca la base.
+- **Carga:** 22 comunas, 342 barrios, 2.991 espacios (1.970 EPOU con huella + 1.021 escenarios deportivos con punto), 660 zonas de amenaza y las 182 JAC (organizaciones, no personas), con licencia, atribución y fecha de corte en `ref.fuentes`.
+- **Mismo resultado que la app:** con PostGIS (`ST_Intersects`) salen **884 espacios con cruce de inundación y 1.369 con cruce sísmico, idénticos uno a uno** a los que precalculó la app con Turf. Hallazgo: la capa sísmica de la app usa 5 de los 16 polígonos de microzonificación (los que tienen susceptibilidad a licuación o corrimiento); el filtro queda anotado en la base.
+- **Sin inventar:** 52 espacios sin comuna, 23 JAC cuyo código de barrio no aparece en la capa de barrios, y 3 huellas y 18 zonas con geometría no válida según GEOS se cargan tal como vienen y quedan reportadas.
+
+Validación (`cd db && npm test`): 69 pruebas del SQL y 17 de carga, entre ellas la idempotencia, la atomicidad ante una falla a mitad de camino y la lectura pública como `anon`. Falta correrla en un proyecto real de Supabase; la URL de conexión se pasa solo por la terminal.
+
+## 6.28 Montaje en Supabase y acceso del equipo (4 de octubre)
+
+- **Repo privado:** el repo pasó a privado y la demo de GitHub Pages sigue publicada. Se invitó con permiso de escritura a Herlin (`helynecheverry`), Pablo (`PabloEArangoM`) y Bryan (`bryanmavi`). Las copias que ellos hicieron con fork **siguen públicas** hasta que cada uno las cierre.
+- **Pull request:** la base de datos va en el PR #2 (`db/esquema-inicial` → `main`).
+- **Supabase `dev`:** proyecto `rqxltixtsiqsakxapdue`, creado con la cuenta de GitHub. La CLI de Supabase quedó como dependencia de `db/`, con `db/supabase/config.toml`. Las **12 migraciones se aplicaron** con `supabase db push`.
+- **API verificada en Supabase real:** solo se expone el esquema `api`. Como público se leen los catálogos; las decisiones, la auditoría y las escrituras quedan bloqueadas, y `ops` y `public` no están expuestos.
+- **Datos reales en Supabase:** 2.991 espacios, 660 zonas, 22 comunas, 342 barrios y 182 JAC, con los mismos cruces de amenaza que la app (0 diferencias). Región del proyecto: EE. UU. este (`us-east-1`).
+- **Documentos:** `db/docs/INFORME_MONTAJE_SUPABASE.pdf` (qué se hizo, con el detalle) y `db/docs/ACCESO_EQUIPO.pdf` (paso a paso para cada integrante).
+
+## 6.29 Cuentas de demostración por rol (4 de octubre)
+
+Se crearon en Supabase `dev` las **13 cuentas de demostración** (`db/scripts/crear_usuarios_demo.mjs`): plataforma, 2 de gestión del riesgo, 4 de entidades responsables (UAESP, EMCALI, Salud Pública, Bienestar Social), DATIC, 3 comunitarias, auditoría y jurado. Usan correos `@example.org`, alias institucionales y organizaciones comunitarias **ficticias**; ninguna es una persona ni una junta real. Las contraseñas están solo en el equipo del responsable de la BD (William).
+
+Prueba de punta a punta en Supabase real: las 13 cuentas inician sesión con su rol y el token trae el claim del hook. La base bloquea a `gestion_riesgo` sin MFA, a una entidad que intenta decidir, a una junta fuera de su zona y a un reporte cuyos grupos de edad no suman, y no deja a `consulta` ver brechas ni auditoría. La cadena de auditoría verifica bien (68 eventos). Falta en la app la pantalla de inicio de sesión y la de inscripción del factor TOTP.
+
+## 6.30 La app conectada a la base de datos (4 de octubre)
+
+- **Lectura desde `api`:** la app lee el territorio desde la base. Sin configuración, o si la base no responde, usa los JSON estáticos y lo dice en el encabezado. La demo pública de GitHub Pages sigue en modo estático.
+- **Mismos datos:** en PGlite son idénticos campo por campo; en Supabase real también, salvo diferencias de coordenadas menores a 10⁻¹³ grados (redondeo de la API).
+- **Error corregido:** paginar con un orden repetido duplicaba filas entre páginas.
+- **Pestaña 06 Operación:** inicio de sesión con las cuentas de demostración, verificación en dos pasos con código QR, y acciones según el rol: registrar decisiones con su acto administrativo (las necesidades salen de `planning.ts`), avanzar brechas, completar tareas, cerrar retornos y reportar conteos comunitarios.
+- **Pruebas:** las 23 unitarias y las 22 de navegador siguen pasando, y la prueba de humo contra Supabase real salió bien.
+
+## 6.31 Mediciones desde la app (4 de octubre)
+
+- **Declarar y verificar:** en la pestaña Operación se declaran mediciones del espacio seleccionado (capacidad, baños, agua, accesibilidad, energía, disponibilidad, horario, animales y evaluación estructural; esta última solo sí/no y fecha). Quien tiene la competencia las verifica o rechaza con evidencia, y quien declara no puede verificar.
+- **Probado en Supabase real:** la JAC A declaró 3 baños en `epou-9535`; UAESP los verificó.
+- **Hallazgo corregido:** una medición verificada por cuentas de demostración habría aparecido en la ficha pública de un parque real. Ahora la ficha y el mapa solo muestran mediciones reales, y lo simulado se ve marcado únicamente en Operación.
+- **TOTP:** se comprobó que funciona con el plan gratuito de Supabase. El SMS es de pago y no se usa.
+
+## 6.32 Tiempo de carga desde la base (4 de octubre)
+
+La carga del territorio desde Supabase bajó de **≈ 8,5 s a 1,3–1,8 s**, medido en el navegador. Las causas eran dos: las páginas de 1.000 filas se pedían en serie, y la API recalculaba el cruce espacial de toda la ciudad en cada página. Ahora los cruces están precalculados (migración 16; la carga de datos los refresca en la misma transacción y una prueba confirma que son idénticos al cálculo en vivo) y las páginas se piden en paralelo. Los datos siguen siendo los mismos de los JSON.
+
 ## 7. Pendientes
+- [ ] **Base de datos:** el responsable de la BD revisa el SQL del Hito 1 y responde las 10 decisiones de `db/docs/MODELO_DATOS.md` §9 (el borrador asume el valor propuesto en cada una).
+- [x] **Base de datos (H2):** script de carga de los datos reales con verificación de `sha256` (sección 6.27).
+- [ ] Revisar las 3 huellas y las 18 zonas de amenaza con geometría no válida (¿reportarlas a la IDESC?), y las 23 JAC cuyo código de barrio no está en la capa de barrios.
+- [x] **Base de datos (H3):** migraciones aplicadas en Supabase `dev` y `api` como único esquema expuesto (sección 6.28).
+- [x] Supabase `dev`: datos reales cargados y verificados (2.991 espacios; cruces idénticos a la app; TLS verificado con la CA de Supabase).
+- [x] Hook del token activo (verificado: el token trae `user_role`).
+- [x] **Hito 5:** 13 cuentas de demostración creadas y verificadas (sección 6.29).
+- [ ] Supabase `dev`: activar el MFA TOTP y **cambiar la contraseña de la base** (quedó expuesta en el chat).
+- [x] App: lectura desde `api`, inicio de sesión, verificación en dos pasos y pestaña Operación (sección 6.30).
+- [x] App: declarar y verificar mediciones (sección 6.31).
+- [x] Tiempo de carga desde la base: 1,3–1,8 s (sección 6.32).
+- [ ] App: probar con MFA real el registro de una decisión.
+- [ ] Cada integrante acepta la invitación, cierra su copia pública y sigue `db/docs/ACCESO_EQUIPO.pdf`. William los invita a la organización de Supabase con el rol Developer.
 - [x] Sustituir la descarga técnica principal por un informe de preparación legible, con todas las necesidades y opción de guardar como PDF.
 - [x] Integrar el fork de Herlin del 26 de septiembre (El kit y Word vigente) y publicar en GitHub Pages.
 - [x] Los 6 entregables del evento y el texto del pitch 4.2 (`entregables/entregables-evento/`).
