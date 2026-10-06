@@ -15,7 +15,15 @@ export interface ApiRows {
   }[];
   huellas: { id: string; geometria: MultiPolygon }[];
   exposicion: { espacio_id: string; zona_id: number; amenaza_tipo: string; etiqueta: string | null }[];
-  mediciones: { espacio_id: string; atributo: string; valor_num: number | null; valor_texto: string | null; es_simulado?: boolean }[];
+  mediciones: {
+    espacio_id: string;
+    atributo: string;
+    valor_num: number | null;
+    valor_bool?: boolean | null;
+    valor_texto: string | null;
+    validado_en?: string | null;
+    es_simulado?: boolean;
+  }[];
   comunas: { codigo: string; nombre: string; geometria: MultiPolygon }[];
   barrios: { codigo: string; nombre: string; comuna_codigo: string; geometria: MultiPolygon }[];
   zonas: { id: number; amenaza_tipo: string; etiqueta: string | null; fuente_clave: string; geometria: MultiPolygon }[];
@@ -45,7 +53,7 @@ export function buildTerritory(rows: ApiRows, manifest: Manifest): Territory {
     if (lista && x.etiqueta && !lista.includes(x.etiqueta)) lista.push(x.etiqueta);
     cruces.set(x.espacio_id, c);
   }
-  const medida = new Map<string, Map<string, { valor_num: number | null; valor_texto: string | null }>>();
+  const medida = new Map<string, Map<string, ApiRows["mediciones"][number]>>();
   // El mapa público solo muestra mediciones reales; las simuladas (cuentas demo) se ven en Operación.
   for (const m of rows.mediciones.filter((x) => !x.es_simulado)) {
     const porEspacio = medida.get(m.espacio_id) ?? new Map();
@@ -59,6 +67,9 @@ export function buildTerritory(rows: ApiRows, manifest: Manifest): Territory {
 
   const spaces = rows.espacios.map((e) => {
     const c = cruces.get(e.id) ?? { flood: [], seismic: [] };
+    const aceptaAnimales = medida.get(e.id)?.get("acepta_animales_compania");
+    const zonaAnimales = medida.get(e.id)?.get("zona_animales");
+    const capacidadAnimales = medida.get(e.id)?.get("capacidad_animales");
     const properties: SpaceProperties = {
       id: e.id,
       sourceKey: e.fuente_clave as SpaceProperties["sourceKey"],
@@ -80,6 +91,19 @@ export function buildTerritory(rows: ApiRows, manifest: Manifest): Territory {
       capacity: numero(e.id, "capacidad_personas"),
       toilets: numero(e.id, "banos"),
       waterLitersPerDay: numero(e.id, "agua_l_dia"),
+      ...(aceptaAnimales && {
+        acepta_animales_compania: aceptaAnimales.valor_bool ?? null,
+        acepta_animales_compania_validado_en: aceptaAnimales.validado_en ?? null,
+      }),
+      ...(zonaAnimales && {
+        zona_animales: zonaAnimales.valor_bool ?? null,
+        zona_animales_validado_en: zonaAnimales.validado_en ?? null,
+      }),
+      ...(capacidadAnimales && {
+        capacidad_animales:
+          capacidadAnimales.valor_num === null ? null : Number(capacidadAnimales.valor_num),
+        capacidad_animales_validado_en: capacidadAnimales.validado_en ?? null,
+      }),
     };
     const geometry: Geometry =
       huella.get(e.id) ?? ({ type: "Point", coordinates: [Number(e.lon), Number(e.lat)] } as Point);
@@ -140,7 +164,7 @@ export async function loadTerritoryFromApi(cliente: Consultable, manifest: Manif
       "id,nombre,tipo,condicion,comuna_codigo,barrio_nombre,limite_ambiguo,lon,lat,area_m2,fuente_clave,metodo_evaluacion,comuna_fuente,barrio_fuente", "orden_fuente"),
     todas<ApiRows["huellas"][number]>(cliente, "espacio_huellas", "id,geometria", "id"),
     todas<ApiRows["exposicion"][number]>(cliente, "espacio_exposicion", "espacio_id,zona_id,amenaza_tipo,etiqueta", "zona_id,espacio_id"),
-    todas<ApiRows["mediciones"][number]>(cliente, "mediciones_verificadas", "espacio_id,atributo,valor_num,valor_texto,es_simulado", "espacio_id,atributo"),
+    todas<ApiRows["mediciones"][number]>(cliente, "mediciones_verificadas", "espacio_id,atributo,valor_num,valor_bool,valor_texto,validado_en,es_simulado", "espacio_id,atributo"),
     todas<ApiRows["comunas"][number]>(cliente, "comunas", "codigo,nombre,geometria", "orden_fuente"),
     todas<ApiRows["barrios"][number]>(cliente, "barrios", "codigo,nombre,comuna_codigo,geometria", "orden_fuente"),
     todas<ApiRows["zonas"][number]>(cliente, "zonas_amenaza", "id,amenaza_tipo,etiqueta,fuente_clave,geometria", "id"),

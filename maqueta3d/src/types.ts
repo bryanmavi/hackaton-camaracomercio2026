@@ -22,6 +22,13 @@ export interface SpaceProperties {
   capacity: number | null;
   toilets: number | null;
   waterLitersPerDay: number | null;
+  /** Mediciones verificadas; los valores y fechas pueden faltar independientemente. */
+  acepta_animales_compania?: boolean | null;
+  acepta_animales_compania_validado_en?: string | null;
+  zona_animales?: boolean | null;
+  zona_animales_validado_en?: string | null;
+  capacidad_animales?: number | null;
+  capacidad_animales_validado_en?: string | null;
 }
 export type Space = Feature<Geometry, SpaceProperties>;
 export interface Source {

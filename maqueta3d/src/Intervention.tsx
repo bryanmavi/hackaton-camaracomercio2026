@@ -23,6 +23,23 @@ import {
 import { isFire, firePreparation, fireSources, fireLimitations } from "./fire";
 const SelectedSpaceScene = lazy(() => import("./SelectedSpaceScene"));
 type Followup = "Por medir" | "En revisión";
+const fechaVerificacion = (value?: string | null) => {
+  if (!value) return "fecha no disponible";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "fecha no disponible";
+  return new Intl.DateTimeFormat("es-CO", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(date);
+};
+const estadoAnimal = (value?: boolean | null, validadoEn?: string | null) =>
+  value == null
+    ? "Sin dato verificado"
+    : `${value ? "Sí" : "No"} · verificado el ${fechaVerificacion(validadoEn)}`;
+const capacidadAnimal = (value?: number | null, validadoEn?: string | null) =>
+  value == null
+    ? "Sin dato verificado"
+    : `${fmt(value)} animales · verificado el ${fechaVerificacion(validadoEn)}`;
 export default function Intervention({
   data,
   origin,
@@ -375,6 +392,42 @@ export default function Intervention({
           {area === null ? "sin polígono" : `${fmt(Math.round(area))} m²`}. No
           equivale a área cubierta, libre ni aforo.
         </p>
+        <div className="notice">
+          <h3>Condiciones verificadas para animales de compañía</h3>
+          <dl>
+            <div>
+              <dt>¿Admite animales de compañía?</dt>
+              <dd>
+                {estadoAnimal(
+                  p.acepta_animales_compania,
+                  p.acepta_animales_compania_validado_en,
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>¿Tiene zona separada para animales?</dt>
+              <dd>
+                {estadoAnimal(
+                  p.zona_animales,
+                  p.zona_animales_validado_en,
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt>Capacidad para animales</dt>
+              <dd>
+                {capacidadAnimal(
+                  p.capacidad_animales,
+                  p.capacidad_animales_validado_en,
+                )}
+              </dd>
+            </div>
+          </dl>
+          <p className="small-note">
+            Estos datos informan la revisión del espacio; no determinan su
+            aptitud ni modifican el orden de los candidatos.
+          </p>
+        </div>
         <Suspense fallback={<p>Cargando la huella seleccionada…</p>}>
           <SelectedSpaceScene space={target} />
         </Suspense>
